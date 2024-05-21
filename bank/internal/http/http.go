@@ -21,7 +21,9 @@ func NewServer() error {
 }
 
 func registerBankRoutes(app *fiber.App) {
-	router := app.Group("/bank")
+	router := app.Group("/api")
 
 	router.Get("/", bank.GetRootRoute)
+
+	router.Post("/accounts", bank.CreateAccountRoute)
 }
