@@ -1,4 +1,4 @@
-package routes
+package bank
 
 import (
 	"net/http"

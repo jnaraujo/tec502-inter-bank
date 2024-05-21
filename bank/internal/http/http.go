@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/config"
-	"github.com/jnaraujo/tec502-inter-bank/bank/internal/routes"
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/routes/bank"
 )
 
 func NewServer() error {
@@ -13,7 +13,7 @@ func NewServer() error {
 
 	registerBankRoutes(app)
 
-	err := app.Listen(fmt.Sprintf("0.0.0.0:%d", config.Env.ServerPort))
+	err := app.Listen(fmt.Sprintf("%s:%d", "0.0.0.0", config.Env.ServerPort))
 	if err != nil {
 		return err
 	}
@@ -23,5 +23,5 @@ func NewServer() error {
 func registerBankRoutes(app *fiber.App) {
 	router := app.Group("/bank")
 
-	router.Get("/", routes.GetRootRoute)
+	router.Get("/", bank.GetRootRoute)
 }
