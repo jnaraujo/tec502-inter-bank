@@ -13,8 +13,8 @@ type BankId [2]byte
 type UserId [4]byte
 
 type UserKey struct {
-	bank BankId
-	user UserId
+	BankId BankId
+	UserId UserId
 }
 
 func NewUserKeyFromStr(value string) (*UserKey, error) {
@@ -51,20 +51,20 @@ func NewUserKey(bankId uint16, userId uint32) *UserKey {
 	binary.BigEndian.PutUint32(user[:], userId)
 
 	return &UserKey{
-		bank: bank,
-		user: user,
+		BankId: bank,
+		UserId: user,
 	}
 }
 
 func (uk *UserKey) Bytes() []byte {
 	b := make([]byte, 6)
-	copy(b[:2], uk.bank[:])
-	copy(b[2:], uk.user[:])
+	copy(b[:2], uk.BankId[:])
+	copy(b[2:], uk.UserId[:])
 	return b
 }
 
 func (uk *UserKey) String() string {
-	bankId := binary.BigEndian.Uint16(uk.bank[:])
-	userId := binary.BigEndian.Uint32(uk.user[:])
+	bankId := binary.BigEndian.Uint16(uk.BankId[:])
+	userId := binary.BigEndian.Uint32(uk.UserId[:])
 	return fmt.Sprintf("%d-%d", bankId, userId)
 }
