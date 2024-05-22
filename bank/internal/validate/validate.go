@@ -6,7 +6,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-var validate = validator.New()
+var validate = validator.New(validator.WithRequiredStructEnabled())
 
 type ErrorResponse struct {
 	FailedField string      `json:"failed_field"`
