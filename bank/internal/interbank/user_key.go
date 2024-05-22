@@ -47,8 +47,8 @@ func NewUserKey(bankId uint16, userId uint32) *UserKey {
 	bank := BankId{}
 	user := UserId{}
 
-	binary.BigEndian.PutUint16(bank[:], bankId)
-	binary.BigEndian.PutUint32(user[:], userId)
+	binary.LittleEndian.PutUint16(bank[:], bankId)
+	binary.LittleEndian.PutUint32(user[:], userId)
 
 	return &UserKey{
 		BankId: bank,
@@ -64,7 +64,19 @@ func (uk *UserKey) Bytes() []byte {
 }
 
 func (uk *UserKey) String() string {
-	bankId := binary.BigEndian.Uint16(uk.BankId[:])
-	userId := binary.BigEndian.Uint32(uk.UserId[:])
+	bankId := binary.LittleEndian.Uint16(uk.BankId[:])
+	userId := binary.LittleEndian.Uint32(uk.UserId[:])
 	return fmt.Sprintf("%d-%d", bankId, userId)
+}
+
+func NewBankId(id uint16) BankId {
+	bi := BankId{}
+	binary.LittleEndian.PutUint16(bi[:], id)
+	return bi
+}
+
+func NewUserId(id uint32) UserId {
+	ui := UserId{}
+	binary.LittleEndian.PutUint32(ui[:], id)
+	return ui
 }
