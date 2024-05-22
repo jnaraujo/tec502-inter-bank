@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"sync"
 	"time"
 
@@ -45,4 +46,48 @@ func FindUserById(id int) (models.User, bool) {
 	user, ok := users.data[id]
 	users.RUnlock()
 	return user, ok
+}
+
+func AddToUserBalance(userId int, amount decimal.Decimal) (models.User, bool) {
+	users.Lock()
+	user, ok := users.data[userId]
+	if !ok {
+		users.Unlock()
+		return models.User{}, ok
+	}
+
+	user.Balance = user.Balance.Add(amount)
+	users.data[userId] = user
+	users.Unlock()
+
+	return user, ok
+}
+
+func TransferBalance(from, to int, amount decimal.Decimal) error {
+	users.Lock()
+	fromUser, ok := users.data[from]
+	if !ok {
+		users.Unlock()
+		return errors.New("sender not found")
+	}
+
+	toUser, ok := users.data[to]
+	if !ok {
+		users.Unlock()
+		return errors.New("receiver not found")
+	}
+
+	if fromUser.Balance.LessThan(amount) {
+		users.Unlock()
+		return errors.New("insufficient funds")
+	}
+
+	fromUser.Balance = fromUser.Balance.Sub(amount)
+	toUser.Balance = toUser.Balance.Add(amount)
+
+	users.data[from] = fromUser
+	users.data[to] = toUser
+	users.Unlock()
+
+	return nil
 }
