@@ -10,12 +10,12 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type UsersStorage struct {
+type usersStorage struct {
 	sync.RWMutex
 	data map[int]models.User
 }
 
-var users = &UsersStorage{
+var users = &usersStorage{
 	RWMutex: sync.RWMutex{},
 	data:    make(map[int]models.User),
 }
