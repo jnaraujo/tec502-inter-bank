@@ -5,7 +5,6 @@
 ### Contas
 - POST /accounts - Cria uma conta
 - GET /accounts/:id - Retorna os dados de uma conta
-- GET /accounts/:id/balance - Retorna o saldo de uma conta
 - GET /accounts/:id/transactions - Retorna as transações de uma conta
 
 ### Transferências
