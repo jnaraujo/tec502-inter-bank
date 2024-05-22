@@ -30,3 +30,11 @@ func TestCompareUserKey(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, expected, actual)
 }
+
+func TestIdsToStr(t *testing.T) {
+	userId := NewUserId(100)
+	bankId := NewBankId(3123)
+
+	assert.Equal(t, "100", userId.String())
+	assert.Equal(t, "3123", bankId.String())
+}

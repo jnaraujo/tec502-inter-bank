@@ -80,3 +80,29 @@ func NewUserId(id uint32) UserId {
 	binary.LittleEndian.PutUint32(ui[:], id)
 	return ui
 }
+
+func (ui UserId) String() string {
+	return strconv.Itoa(int(binary.LittleEndian.Uint16(ui[:])))
+}
+
+func (bi BankId) String() string {
+	return strconv.Itoa(int(binary.LittleEndian.Uint16(bi[:])))
+}
+
+func (bi BankId) MarshalText() (text []byte, err error) {
+	return []byte(bi.String()), nil
+}
+
+func (bi *BankId) UnmarshalText(text []byte) error {
+	if len(text) == 0 {
+		return errors.New("empty bank id")
+	}
+
+	id, err := strconv.Atoi(string(text))
+	if err != nil {
+		return err
+	}
+
+	binary.LittleEndian.PutUint16(bi[:], uint16(id))
+	return nil
+}

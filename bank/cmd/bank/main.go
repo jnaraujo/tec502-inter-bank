@@ -8,12 +8,12 @@ import (
 )
 
 func main() {
-	fmt.Println("Bank App")
-
 	err := config.InitEnv()
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Printf("Bank App - Id: %s\n", config.Env.BankId)
 
 	err = http.NewServer()
 	if err != nil {
