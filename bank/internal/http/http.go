@@ -26,4 +26,5 @@ func registerBankRoutes(app *fiber.App) {
 	router.Get("/", bank.GetRootRoute)
 
 	router.Post("/accounts", bank.CreateAccountRoute)
+	router.Get("/accounts/:id", bank.FindAccountRoute)
 }

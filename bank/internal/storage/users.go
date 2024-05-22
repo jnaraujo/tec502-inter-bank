@@ -4,6 +4,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/config"
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/models"
 	"github.com/shopspring/decimal"
 )
@@ -20,16 +22,22 @@ var users = &UsersStorage{
 
 func CreateUser(name string) models.User {
 	users.Lock()
-	user := &models.User{
+	user := models.User{
 		Id:        len(users.data) + 1,
 		Name:      name,
 		CreatedAt: time.Now(),
 		Balance:   decimal.NewFromInt(0),
 	}
-	users.data[user.Id] = *user
+
+	user.InterBankKey = interbank.UserKey{
+		BankId: config.Env.BankId,
+		UserId: interbank.NewUserId(uint32(user.Id)),
+	}
+
+	users.data[user.Id] = user
 	users.Unlock()
 
-	return *user
+	return user
 }
 
 func FindUserById(id int) (models.User, bool) {

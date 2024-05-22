@@ -3,12 +3,14 @@ package models
 import (
 	"time"
 
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank"
 	"github.com/shopspring/decimal"
 )
 
 type User struct {
-	Id        int             `json:"id" validate:"required"`
-	Name      string          `json:"name" validate:"required,lte=255"`
-	CreatedAt time.Time       `json:"created_at"`
-	Balance   decimal.Decimal `json:"balance"`
+	Id           int               `json:"id"`
+	Name         string            `json:"name"`
+	CreatedAt    time.Time         `json:"created_at"`
+	Balance      decimal.Decimal   `json:"balance"`
+	InterBankKey interbank.UserKey `json:"ibk"`
 }

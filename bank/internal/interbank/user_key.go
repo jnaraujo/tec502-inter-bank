@@ -3,6 +3,7 @@ package interbank
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -56,17 +57,37 @@ func NewUserKey(bankId uint16, userId uint32) *UserKey {
 	}
 }
 
-func (uk *UserKey) Bytes() []byte {
+func (uk UserKey) Bytes() []byte {
 	b := make([]byte, 6)
 	copy(b[:2], uk.BankId[:])
 	copy(b[2:], uk.UserId[:])
 	return b
 }
 
-func (uk *UserKey) String() string {
+func (uk UserKey) String() string {
 	bankId := binary.LittleEndian.Uint16(uk.BankId[:])
 	userId := binary.LittleEndian.Uint32(uk.UserId[:])
 	return fmt.Sprintf("%d-%d", bankId, userId)
+}
+
+func (uk *UserKey) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+
+	ptr, err := NewUserKeyFromStr(s)
+	if err != nil {
+		return err
+	}
+
+	*uk = *ptr
+
+	return err
+}
+
+func (uk UserKey) MarshalJSON() ([]byte, error) {
+	return json.Marshal(uk.String())
 }
 
 func NewBankId(id uint16) BankId {
