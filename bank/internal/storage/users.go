@@ -10,12 +10,12 @@ import (
 
 type UsersStorage struct {
 	sync.RWMutex
-	data map[int]*models.User
+	data map[int]models.User
 }
 
 var users = &UsersStorage{
 	RWMutex: sync.RWMutex{},
-	data:    make(map[int]*models.User),
+	data:    make(map[int]models.User),
 }
 
 func CreateUser(name string) models.User {
@@ -26,7 +26,7 @@ func CreateUser(name string) models.User {
 		CreatedAt: time.Now(),
 		Balance:   decimal.NewFromInt(0),
 	}
-	users.data[user.Id] = user
+	users.data[user.Id] = *user
 	users.Unlock()
 
 	return *user
@@ -36,5 +36,5 @@ func FindUserById(id int) (models.User, bool) {
 	users.RLock()
 	user, ok := users.data[id]
 	users.RUnlock()
-	return *user, ok
+	return user, ok
 }
