@@ -80,6 +80,7 @@ func (ts *transactionsStorage) FindUserTransactionsById(userId int) []models.Tra
 
 func (ts *transactionsStorage) UpdateTransactionStatus(t models.Transaction, s models.TransactionStatus) models.Transaction {
 	ts.mu.Lock()
+	t.UpdatedAt = time.Now()
 	t.Status = s
 	ts.data[t.Id] = t
 	ts.mu.Unlock()
