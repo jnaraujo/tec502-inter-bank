@@ -11,17 +11,17 @@ import (
 )
 
 type transactionsStorage struct {
-	sync.RWMutex
+	mu   sync.RWMutex
 	data map[int]models.Transaction
 }
 
 var Transactions = &transactionsStorage{
-	RWMutex: sync.RWMutex{},
-	data:    make(map[int]models.Transaction),
+	mu:   sync.RWMutex{},
+	data: make(map[int]models.Transaction),
 }
 
 func (ts *transactionsStorage) CreateTransaction(from, to interbank.UserKey, amount decimal.Decimal, transactionType models.TransactionType) models.Transaction {
-	ts.Lock()
+	ts.mu.Lock()
 
 	transaction := models.Transaction{
 		Id:        len(ts.data) + 1,
@@ -34,13 +34,13 @@ func (ts *transactionsStorage) CreateTransaction(from, to interbank.UserKey, amo
 	}
 	ts.data[transaction.Id] = transaction
 
-	ts.Unlock()
+	ts.mu.Unlock()
 
 	return transaction
 }
 
 func (ts *transactionsStorage) CreateDepositTransaction(from interbank.UserKey, amount decimal.Decimal, transactionType models.TransactionType) models.Transaction {
-	ts.Lock()
+	ts.mu.Lock()
 
 	transaction := models.Transaction{
 		Id:        len(ts.data) + 1,
@@ -52,7 +52,7 @@ func (ts *transactionsStorage) CreateDepositTransaction(from interbank.UserKey, 
 	}
 	ts.data[transaction.Id] = transaction
 
-	ts.Unlock()
+	ts.mu.Unlock()
 
 	return transaction
 }
@@ -61,13 +61,13 @@ func (ts *transactionsStorage) FindUserTransactionsById(userId int) []models.Tra
 	transactions := []models.Transaction{}
 	user, _ := Users.FindUserById(userId)
 
-	ts.RLock()
+	ts.mu.RLock()
 	for _, t := range ts.data {
 		if t.From == user.InterBankKey || t.To == &user.InterBankKey {
 			transactions = append(transactions, t)
 		}
 	}
-	ts.RUnlock()
+	ts.mu.RUnlock()
 
 	slices.SortStableFunc(transactions, func(a models.Transaction, b models.Transaction) int {
 		return b.CreatedAt.Compare(a.CreatedAt)
