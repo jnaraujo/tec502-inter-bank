@@ -57,5 +57,16 @@ func CreateDepositTransaction(from interbank.UserKey, amount decimal.Decimal, tr
 }
 
 func FindUserTransactionsById(userId int) []models.Transaction {
-	return nil
+	ts := []models.Transaction{}
+	user, _ := FindUserById(userId)
+
+	transactions.RLock()
+	for _, t := range transactions.data {
+		if t.From == user.InterBankKey || t.To == &user.InterBankKey {
+			ts = append(ts, t)
+		}
+	}
+	transactions.RUnlock()
+
+	return ts
 }
