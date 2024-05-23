@@ -16,15 +16,15 @@ type usersStorage struct {
 	data map[int]models.User
 }
 
-var users = &usersStorage{
+var Users = &usersStorage{
 	RWMutex: sync.RWMutex{},
 	data:    make(map[int]models.User),
 }
 
-func CreateUser(name string) models.User {
-	users.Lock()
+func (us *usersStorage) CreateUser(name string) models.User {
+	us.Lock()
 	user := models.User{
-		Id:        len(users.data) + 1,
+		Id:        len(us.data) + 1,
 		Name:      name,
 		CreatedAt: time.Now(),
 		Balance:   decimal.NewFromInt(0),
@@ -35,59 +35,59 @@ func CreateUser(name string) models.User {
 		UserId: interbank.NewUserId(uint32(user.Id)),
 	}
 
-	users.data[user.Id] = user
-	users.Unlock()
+	us.data[user.Id] = user
+	us.Unlock()
 
 	return user
 }
 
-func FindUserById(id int) (models.User, bool) {
-	users.RLock()
-	user, ok := users.data[id]
-	users.RUnlock()
+func (us *usersStorage) FindUserById(id int) (models.User, bool) {
+	us.RLock()
+	user, ok := us.data[id]
+	us.RUnlock()
 	return user, ok
 }
 
-func AddToUserBalance(userId int, amount decimal.Decimal) (models.User, bool) {
-	users.Lock()
-	user, ok := users.data[userId]
+func (us *usersStorage) AddToUserBalance(userId int, amount decimal.Decimal) (models.User, bool) {
+	us.Lock()
+	user, ok := us.data[userId]
 	if !ok {
-		users.Unlock()
+		us.Unlock()
 		return models.User{}, ok
 	}
 
 	user.Balance = user.Balance.Add(amount)
-	users.data[userId] = user
-	users.Unlock()
+	us.data[userId] = user
+	us.Unlock()
 
 	return user, ok
 }
 
-func TransferBalance(from, to int, amount decimal.Decimal) error {
-	users.Lock()
-	fromUser, ok := users.data[from]
+func (us *usersStorage) TransferBalance(from, to int, amount decimal.Decimal) error {
+	us.Lock()
+	fromUser, ok := us.data[from]
 	if !ok {
-		users.Unlock()
+		us.Unlock()
 		return errors.New("sender not found")
 	}
 
-	toUser, ok := users.data[to]
+	toUser, ok := us.data[to]
 	if !ok {
-		users.Unlock()
+		us.Unlock()
 		return errors.New("receiver not found")
 	}
 
 	if fromUser.Balance.LessThan(amount) {
-		users.Unlock()
+		us.Unlock()
 		return errors.New("insufficient funds")
 	}
 
 	fromUser.Balance = fromUser.Balance.Sub(amount)
 	toUser.Balance = toUser.Balance.Add(amount)
 
-	users.data[from] = fromUser
-	users.data[to] = toUser
-	users.Unlock()
+	us.data[from] = fromUser
+	us.data[to] = toUser
+	us.Unlock()
 
 	return nil
 }

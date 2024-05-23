@@ -18,6 +18,6 @@ func CreateAccountRoute(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
 	}
 
-	user := storage.CreateUser(body.Name)
+	user := storage.Users.CreateUser(body.Name)
 	return c.Status(http.StatusCreated).JSON(&user)
 }

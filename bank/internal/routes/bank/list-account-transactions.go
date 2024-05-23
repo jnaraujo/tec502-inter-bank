@@ -15,7 +15,7 @@ func ListAccountTransactionsRoute(c *fiber.Ctx) error {
 		})
 	}
 
-	_, exists := storage.FindUserById(id)
+	_, exists := storage.Users.FindUserById(id)
 	if !exists {
 		return c.Status(http.StatusNotFound).JSON(&fiber.Map{
 			"message": "User does not exists",

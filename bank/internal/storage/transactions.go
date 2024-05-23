@@ -59,7 +59,7 @@ func (ts *transactionsStorage) CreateDepositTransaction(from interbank.UserKey, 
 
 func (ts *transactionsStorage) FindUserTransactionsById(userId int) []models.Transaction {
 	transactions := []models.Transaction{}
-	user, _ := FindUserById(userId)
+	user, _ := Users.FindUserById(userId)
 
 	ts.RLock()
 	for _, t := range ts.data {

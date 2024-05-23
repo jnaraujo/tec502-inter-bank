@@ -21,7 +21,7 @@ func DepositRoute(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
 	}
 
-	user, exists := storage.FindUserById(body.UserId)
+	user, exists := storage.Users.FindUserById(body.UserId)
 	if !exists {
 		return c.Status(http.StatusNotFound).JSON(&fiber.Map{
 			"message": "User does not exists",
@@ -36,7 +36,7 @@ func DepositRoute(c *fiber.Ctx) error {
 
 	transaction := storage.Transactions.CreateDepositTransaction(user.InterBankKey, body.Amount, models.TransactionTypeDeposit)
 
-	user, ok := storage.AddToUserBalance(user.Id, body.Amount)
+	user, ok := storage.Users.AddToUserBalance(user.Id, body.Amount)
 	if !ok {
 		return c.Status(http.StatusInternalServerError).JSON(&fiber.Map{
 			"message": "Error adding to user balance",
