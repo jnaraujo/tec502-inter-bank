@@ -22,6 +22,6 @@ func ListAccountTransactionsRoute(c *fiber.Ctx) error {
 		})
 	}
 
-	transactions := storage.FindUserTransactionsById(id)
+	transactions := storage.Transactions.FindUserTransactionsById(id)
 	return c.Status(http.StatusOK).JSON(&transactions)
 }

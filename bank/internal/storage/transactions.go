@@ -14,16 +14,16 @@ type transactionsStorage struct {
 	data map[int]models.Transaction
 }
 
-var transactions = &transactionsStorage{
+var Transactions = &transactionsStorage{
 	RWMutex: sync.RWMutex{},
 	data:    make(map[int]models.Transaction),
 }
 
-func CreateTransaction(from, to interbank.UserKey, amount decimal.Decimal, transactionType models.TransactionType) models.Transaction {
-	transactions.Lock()
+func (ts *transactionsStorage) CreateTransaction(from, to interbank.UserKey, amount decimal.Decimal, transactionType models.TransactionType) models.Transaction {
+	ts.Lock()
 
-	t := models.Transaction{
-		Id:        len(transactions.data) + 1,
+	transaction := models.Transaction{
+		Id:        len(ts.data) + 1,
 		From:      from,
 		To:        &to,
 		Amount:    amount,
@@ -31,42 +31,42 @@ func CreateTransaction(from, to interbank.UserKey, amount decimal.Decimal, trans
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	transactions.data[t.Id] = t
+	ts.data[transaction.Id] = transaction
 
-	transactions.Unlock()
+	ts.Unlock()
 
-	return t
+	return transaction
 }
 
-func CreateDepositTransaction(from interbank.UserKey, amount decimal.Decimal, transactionType models.TransactionType) models.Transaction {
-	transactions.Lock()
+func (ts *transactionsStorage) CreateDepositTransaction(from interbank.UserKey, amount decimal.Decimal, transactionType models.TransactionType) models.Transaction {
+	ts.Lock()
 
-	t := models.Transaction{
-		Id:        len(transactions.data) + 1,
+	transaction := models.Transaction{
+		Id:        len(ts.data) + 1,
 		From:      from,
 		Amount:    amount,
 		Type:      transactionType,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	transactions.data[t.Id] = t
+	ts.data[transaction.Id] = transaction
 
-	transactions.Unlock()
+	ts.Unlock()
 
-	return t
+	return transaction
 }
 
-func FindUserTransactionsById(userId int) []models.Transaction {
-	ts := []models.Transaction{}
+func (ts *transactionsStorage) FindUserTransactionsById(userId int) []models.Transaction {
+	transactions := []models.Transaction{}
 	user, _ := FindUserById(userId)
 
-	transactions.RLock()
-	for _, t := range transactions.data {
+	ts.RLock()
+	for _, t := range ts.data {
 		if t.From == user.InterBankKey || t.To == &user.InterBankKey {
-			ts = append(ts, t)
+			transactions = append(transactions, t)
 		}
 	}
-	transactions.RUnlock()
+	ts.RUnlock()
 
-	return ts
+	return transactions
 }

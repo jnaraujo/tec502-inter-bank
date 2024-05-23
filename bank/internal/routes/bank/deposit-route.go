@@ -34,7 +34,7 @@ func DepositRoute(c *fiber.Ctx) error {
 		})
 	}
 
-	transaction := storage.CreateDepositTransaction(user.InterBankKey, body.Amount, models.TransactionTypeDeposit)
+	transaction := storage.Transactions.CreateDepositTransaction(user.InterBankKey, body.Amount, models.TransactionTypeDeposit)
 
 	user, ok := storage.AddToUserBalance(user.Id, body.Amount)
 	if !ok {
