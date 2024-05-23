@@ -44,7 +44,7 @@ func DepositRoute(c *fiber.Ctx) error {
 		})
 	}
 
-	storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusSuccess)
+	transaction = storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusSuccess)
 
 	return c.Status(http.StatusOK).JSON(&transaction)
 }
