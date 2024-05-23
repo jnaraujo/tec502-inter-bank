@@ -16,6 +16,14 @@ const (
 	TransactionTypePayment  TransactionType = "payment"  // Pagamento de boleto, fatura, etc
 )
 
+type TransactionStatus string
+
+const (
+	TransactionStatusPending TransactionStatus = "pending"
+	TransactionStatusSuccess TransactionStatus = "success"
+	TransactionStatusFailed  TransactionStatus = "failed"
+)
+
 type Transaction struct {
 	Id        int                `json:"id"`
 	From      interbank.UserKey  `json:"from"`
@@ -24,4 +32,5 @@ type Transaction struct {
 	Type      TransactionType    `json:"type"`
 	CreatedAt time.Time          `json:"created_at"`
 	UpdatedAt time.Time          `json:"updated_at"`
+	Status    TransactionStatus  `json:"status"`
 }

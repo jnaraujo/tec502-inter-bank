@@ -38,10 +38,13 @@ func DepositRoute(c *fiber.Ctx) error {
 
 	user, ok := storage.Users.AddToUserBalance(user.Id, body.Amount)
 	if !ok {
+		storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
 		return c.Status(http.StatusInternalServerError).JSON(&fiber.Map{
 			"message": "Error adding to user balance",
 		})
 	}
+
+	storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusSuccess)
 
 	return c.Status(http.StatusOK).JSON(&transaction)
 }

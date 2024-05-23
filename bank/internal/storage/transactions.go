@@ -31,6 +31,7 @@ func (ts *transactionsStorage) CreateTransaction(from, to interbank.UserKey, amo
 		Type:      transactionType,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
+		Status:    models.TransactionStatusPending,
 	}
 	ts.data[transaction.Id] = transaction
 
@@ -49,6 +50,7 @@ func (ts *transactionsStorage) CreateDepositTransaction(from interbank.UserKey, 
 		Type:      transactionType,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
+		Status:    models.TransactionStatusPending,
 	}
 	ts.data[transaction.Id] = transaction
 
@@ -74,4 +76,11 @@ func (ts *transactionsStorage) FindUserTransactionsById(userId int) []models.Tra
 	})
 
 	return transactions
+}
+
+func (ts *transactionsStorage) UpdateTransactionStatus(t models.Transaction, s models.TransactionStatus) {
+	ts.mu.Lock()
+	t.Status = s
+	ts.data[t.Id] = t
+	ts.mu.Unlock()
 }
