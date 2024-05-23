@@ -12,17 +12,17 @@ import (
 )
 
 type usersStorage struct {
-	sync.RWMutex
+	mu   sync.RWMutex
 	data map[int]models.User
 }
 
 var Users = &usersStorage{
-	RWMutex: sync.RWMutex{},
-	data:    make(map[int]models.User),
+	mu:   sync.RWMutex{},
+	data: make(map[int]models.User),
 }
 
 func (us *usersStorage) CreateUser(name string) models.User {
-	us.Lock()
+	us.mu.Lock()
 	user := models.User{
 		Id:        len(us.data) + 1,
 		Name:      name,
@@ -36,49 +36,49 @@ func (us *usersStorage) CreateUser(name string) models.User {
 	}
 
 	us.data[user.Id] = user
-	us.Unlock()
+	us.mu.Unlock()
 
 	return user
 }
 
 func (us *usersStorage) FindUserById(id int) (models.User, bool) {
-	us.RLock()
+	us.mu.RLock()
 	user, ok := us.data[id]
-	us.RUnlock()
+	us.mu.RUnlock()
 	return user, ok
 }
 
 func (us *usersStorage) AddToUserBalance(userId int, amount decimal.Decimal) (models.User, bool) {
-	us.Lock()
+	us.mu.Lock()
 	user, ok := us.data[userId]
 	if !ok {
-		us.Unlock()
+		us.mu.Unlock()
 		return models.User{}, ok
 	}
 
 	user.Balance = user.Balance.Add(amount)
 	us.data[userId] = user
-	us.Unlock()
+	us.mu.Unlock()
 
 	return user, ok
 }
 
 func (us *usersStorage) TransferBalance(from, to int, amount decimal.Decimal) error {
-	us.Lock()
+	us.mu.Lock()
 	fromUser, ok := us.data[from]
 	if !ok {
-		us.Unlock()
+		us.mu.Unlock()
 		return errors.New("sender not found")
 	}
 
 	toUser, ok := us.data[to]
 	if !ok {
-		us.Unlock()
+		us.mu.Unlock()
 		return errors.New("receiver not found")
 	}
 
 	if fromUser.Balance.LessThan(amount) {
-		us.Unlock()
+		us.mu.Unlock()
 		return errors.New("insufficient funds")
 	}
 
@@ -87,7 +87,7 @@ func (us *usersStorage) TransferBalance(from, to int, amount decimal.Decimal) er
 
 	us.data[from] = fromUser
 	us.data[to] = toUser
-	us.Unlock()
+	us.mu.Unlock()
 
 	return nil
 }
