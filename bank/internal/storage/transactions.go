@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"slices"
 	"sync"
 	"time"
 
@@ -67,6 +68,10 @@ func (ts *transactionsStorage) FindUserTransactionsById(userId int) []models.Tra
 		}
 	}
 	ts.RUnlock()
+
+	slices.SortStableFunc(transactions, func(a models.Transaction, b models.Transaction) int {
+		return b.CreatedAt.Compare(a.CreatedAt)
+	})
 
 	return transactions
 }
