@@ -30,4 +30,5 @@ func registerBankRoutes(app *fiber.App) {
 	router.Get("/accounts/:id/transactions", bank.ListAccountTransactionsRoute)
 
 	router.Post("/payments/deposit", bank.DepositRoute)
+	router.Post("/payments/pay", bank.PayRoute)
 }
