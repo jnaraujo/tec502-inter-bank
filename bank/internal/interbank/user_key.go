@@ -2,7 +2,6 @@ package interbank
 
 import (
 	"bytes"
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,8 +9,8 @@ import (
 	"strconv"
 )
 
-type BankId [2]byte
-type UserId [4]byte
+type BankId uint16
+type UserId uint32
 
 type UserKey struct {
 	BankId BankId
@@ -45,29 +44,14 @@ func NewUserKeyFromStr(value string) (*UserKey, error) {
 }
 
 func NewUserKey(bankId uint16, userId uint32) *UserKey {
-	bank := BankId{}
-	user := UserId{}
-
-	binary.LittleEndian.PutUint16(bank[:], bankId)
-	binary.LittleEndian.PutUint32(user[:], userId)
-
 	return &UserKey{
-		BankId: bank,
-		UserId: user,
+		BankId: BankId(bankId),
+		UserId: UserId(userId),
 	}
 }
 
-func (uk UserKey) Bytes() []byte {
-	b := make([]byte, 6)
-	copy(b[:2], uk.BankId[:])
-	copy(b[2:], uk.UserId[:])
-	return b
-}
-
 func (uk UserKey) String() string {
-	bankId := binary.LittleEndian.Uint16(uk.BankId[:])
-	userId := binary.LittleEndian.Uint32(uk.UserId[:])
-	return fmt.Sprintf("%d-%d", bankId, userId)
+	return fmt.Sprintf("%d-%d", uk.BankId, uk.UserId)
 }
 
 func (uk *UserKey) UnmarshalJSON(b []byte) error {
@@ -91,23 +75,19 @@ func (uk UserKey) MarshalJSON() ([]byte, error) {
 }
 
 func NewBankId(id uint16) BankId {
-	bi := BankId{}
-	binary.LittleEndian.PutUint16(bi[:], id)
-	return bi
+	return BankId(id)
 }
 
 func NewUserId(id uint32) UserId {
-	ui := UserId{}
-	binary.LittleEndian.PutUint32(ui[:], id)
-	return ui
+	return UserId(id)
 }
 
 func (ui UserId) String() string {
-	return strconv.Itoa(int(binary.LittleEndian.Uint16(ui[:])))
+	return strconv.Itoa(int(ui))
 }
 
 func (bi BankId) String() string {
-	return strconv.Itoa(int(binary.LittleEndian.Uint16(bi[:])))
+	return strconv.Itoa(int(bi))
 }
 
 func (bi BankId) MarshalText() (text []byte, err error) {
@@ -124,6 +104,6 @@ func (bi *BankId) UnmarshalText(text []byte) error {
 		return err
 	}
 
-	binary.LittleEndian.PutUint16(bi[:], uint16(id))
+	*bi = BankId(id)
 	return nil
 }
