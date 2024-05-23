@@ -4,16 +4,17 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/jnaraujo/tec502-inter-bank/bank/internal/config"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/routes/bank"
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/routes/interbank"
 )
 
-func NewServer() error {
+func NewServer(port int) error {
 	app := fiber.New()
 
 	registerBankRoutes(app)
+	registerInterBankRoutes(app)
 
-	err := app.Listen(fmt.Sprintf("%s:%d", "0.0.0.0", config.Env.ServerPort))
+	err := app.Listen(fmt.Sprintf("%s:%d", "0.0.0.0", port))
 	if err != nil {
 		return err
 	}
@@ -31,4 +32,10 @@ func registerBankRoutes(app *fiber.App) {
 
 	router.Post("/payments/deposit", bank.DepositRoute)
 	router.Post("/payments/pay", bank.PayRoute)
+}
+
+func registerInterBankRoutes(app *fiber.App) {
+	router := app.Group("/interbank")
+
+	router.Post("/transfer", interbank.TransferRoute)
 }

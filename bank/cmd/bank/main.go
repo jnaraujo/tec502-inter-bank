@@ -15,7 +15,7 @@ func main() {
 
 	fmt.Printf("Bank App - Id: %s\n", config.Env.BankId)
 
-	err = http.NewServer()
+	err = http.NewServer(config.Env.ServerPort)
 	if err != nil {
 		panic(err)
 	}
