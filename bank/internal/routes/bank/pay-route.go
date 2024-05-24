@@ -42,12 +42,16 @@ func PayRoute(c *fiber.Ctx) error {
 		})
 	}
 
+	transaction := storage.Transactions.CreateTransaction(
+		body.FromUserIBK, body.ToUserIBK,
+		body.Amount, models.TransactionTypeTransfer,
+	)
+
 	// transação interna
 	if utils.IsLocalUserIBK(body.ToUserIBK) {
 		return handleInternalTransaction(
 			c,
-			body.FromUserIBK, body.ToUserIBK,
-			body.Amount,
+			transaction,
 		)
 	}
 
@@ -58,11 +62,6 @@ func PayRoute(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
-
-	transaction := storage.Transactions.CreateTransaction(
-		body.FromUserIBK, body.ToUserIBK,
-		body.Amount, models.TransactionTypeTransfer,
-	)
 
 	resp, err := interbank.SendPaymentRequest(body.FromUserIBK, body.ToUserIBK, body.Amount)
 	if err != nil {
@@ -88,16 +87,11 @@ func PayRoute(c *fiber.Ctx) error {
 	return c.Status(http.StatusNotImplemented).JSON(&transaction)
 }
 
-func handleInternalTransaction(c *fiber.Ctx, fromUserIBK, toUserIBK interbank.UserKey, amount decimal.Decimal) error {
-	transaction := storage.Transactions.CreateTransaction(
-		fromUserIBK, toUserIBK,
-		amount, models.TransactionTypeTransfer,
-	)
+func handleInternalTransaction(c *fiber.Ctx, transaction models.Transaction) error {
+	fromUserId := int(transaction.From.UserId)
+	toUserId := int(transaction.To.UserId)
 
-	fromUserId := int(fromUserIBK.UserId)
-	toUserId := int(toUserIBK.UserId)
-
-	err := storage.Users.TransferBalance(fromUserId, toUserId, amount)
+	err := storage.Users.TransferBalance(fromUserId, toUserId, transaction.Amount)
 	if err != nil {
 		storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
 		return c.Status(http.StatusInternalServerError).JSON(&fiber.Map{
