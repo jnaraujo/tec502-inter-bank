@@ -63,6 +63,25 @@ func (us *usersStorage) AddToUserBalance(userId int, amount decimal.Decimal) (mo
 	return user, ok
 }
 
+func (us *usersStorage) SubFromUserBalance(userId int, amount decimal.Decimal) error {
+	us.mu.Lock()
+	defer us.mu.Unlock()
+
+	user, ok := us.data[userId]
+	if !ok {
+		return errors.New("user not found")
+	}
+
+	if user.Balance.LessThan(amount) {
+		return errors.New("insufficient funds")
+	}
+
+	user.Balance = user.Balance.Sub(amount)
+	us.data[userId] = user
+
+	return nil
+}
+
 func (us *usersStorage) TransferBalance(from, to int, amount decimal.Decimal) error {
 	us.mu.Lock()
 	fromUser, ok := us.data[from]

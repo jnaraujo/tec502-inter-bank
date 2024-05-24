@@ -65,7 +65,7 @@ func (ts *transactionsStorage) FindUserTransactionsById(userId int) []models.Tra
 
 	ts.mu.RLock()
 	for _, t := range ts.data {
-		if t.From == user.InterBankKey || t.To == &user.InterBankKey {
+		if t.From == user.InterBankKey || (t.To != nil && *t.To == user.InterBankKey) {
 			transactions = append(transactions, t)
 		}
 	}

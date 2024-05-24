@@ -51,9 +51,41 @@ func PayRoute(c *fiber.Ctx) error {
 		)
 	}
 
-	return c.Status(http.StatusNotImplemented).JSON(&fiber.Map{
-		"message": "Interbank transactions are not implemented yet",
-	})
+	fromUserId := int(body.FromUserIBK.UserId)
+	err := storage.Users.SubFromUserBalance(fromUserId, body.Amount)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(&fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	transaction := storage.Transactions.CreateTransaction(
+		body.FromUserIBK, body.ToUserIBK,
+		body.Amount, models.TransactionTypeTransfer,
+	)
+
+	resp, err := interbank.SendPaymentRequest(body.FromUserIBK, body.ToUserIBK, body.Amount)
+	if err != nil {
+		storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
+		storage.Users.AddToUserBalance(fromUserId, body.Amount)
+
+		return c.Status(http.StatusInternalServerError).JSON(&fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	if resp.Code != interbank.TransferSuccess {
+		storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
+		storage.Users.AddToUserBalance(fromUserId, body.Amount)
+
+		return c.Status(http.StatusInternalServerError).JSON(&fiber.Map{
+			"error": resp.Code,
+		})
+	}
+
+	transaction = storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusSuccess)
+
+	return c.Status(http.StatusNotImplemented).JSON(&transaction)
 }
 
 func handleInternalTransaction(c *fiber.Ctx, fromUserIBK, toUserIBK interbank.UserKey, amount decimal.Decimal) error {
