@@ -4,12 +4,18 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/routes/bank"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/routes/interbank"
 )
 
 func NewServer(port int) error {
 	app := fiber.New()
+
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowHeaders: "Origin, Content-Type, Accept",
+	}))
 
 	registerBankRoutes(app)
 	registerInterBankRoutes(app)
