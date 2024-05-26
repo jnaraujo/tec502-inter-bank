@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
+import { Link } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Button } from "./ui/button"
@@ -6,6 +7,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "./ui/card"
@@ -46,7 +48,7 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="mx-auto max-w-sm">
+    <Card className="mx-auto w-96 max-w-sm">
       <CardHeader>
         <CardTitle className="text-xl">Login</CardTitle>
         <CardDescription>
@@ -69,10 +71,16 @@ export function LoginForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit">Submit</Button>
+            <Button type="submit">Entrar</Button>
           </form>
         </Form>
       </CardContent>
+      <CardFooter className="space-x-1 text-sm">
+        <span>Não tem conta?</span>
+        <Link className="text-purple-700" to="/signup">
+          Crie uma agora!
+        </Link>
+      </CardFooter>
     </Card>
   )
 }
