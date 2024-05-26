@@ -1,5 +1,6 @@
+import { useAuth } from "@/contexts/auth-context"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Link } from "@tanstack/react-router"
+import { Link, useRouter } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Button } from "./ui/button"
@@ -29,6 +30,8 @@ const formSchema = z.object({
 })
 
 export function LoginForm() {
+  const auth = useAuth()
+  const router = useRouter()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -36,15 +39,20 @@ export function LoginForm() {
     },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
-    toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    })
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    try {
+      await auth.login(data)
+      router.navigate({
+        to: "/dashboard",
+      })
+    } catch (error) {
+      console.log(error)
+      toast({
+        title: "Erro ao criar conta",
+        description: "Ocorreu um erro ao criar sua conta. Tente novamente.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
