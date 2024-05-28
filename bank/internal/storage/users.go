@@ -21,11 +21,12 @@ var Users = &usersStorage{
 	data: make(map[int]models.User),
 }
 
-func (us *usersStorage) CreateUser(name string) models.User {
+func (us *usersStorage) CreateUser(name, email string) models.User {
 	us.mu.Lock()
 	user := models.User{
 		Id:        len(us.data) + 1,
 		Name:      name,
+		Email:     email,
 		CreatedAt: time.Now(),
 		Balance:   decimal.NewFromInt(0),
 	}
@@ -46,6 +47,17 @@ func (us *usersStorage) FindUserById(id int) (models.User, bool) {
 	user, ok := us.data[id]
 	us.mu.RUnlock()
 	return user, ok
+}
+
+func (us *usersStorage) FindUserByEmail(email string) (models.User, bool) {
+	us.mu.RLock()
+	for _, user := range us.data {
+		if user.Email == email {
+			return user, true
+		}
+	}
+	us.mu.RUnlock()
+	return models.User{}, false
 }
 
 func (us *usersStorage) AddToUserBalance(userId int, amount decimal.Decimal) (models.User, bool) {
