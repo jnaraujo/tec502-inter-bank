@@ -1,0 +1,85 @@
+{
+  "info": {
+    "name": "bank-api",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "create user",
+      "event": [],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "http://localhost:3000/api/accounts",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"José da Silva\",\n  \"document\": \"000.000.000-0\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "deposit to account",
+      "event": [],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "http://localhost:3000/api/payments/deposit",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_id\": 1,\n  \"amount\": 100\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "find user by id",
+      "event": [],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:3000/api/accounts/1"
+      }
+    },
+    {
+      "name": "list account transactions",
+      "event": [],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:3000/api/accounts/1/transactions"
+      }
+    },
+    {
+      "name": "pay users",
+      "event": [],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "http://localhost:3000/api/payments/pay",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"from_user_ibk\": \"1-1\",\n  \"to_user_ibk\": \"2-2\",\n  \"amount\": 50\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "bruno",
+      "event": []
+    }
+  ],
+  "variable": []
+}

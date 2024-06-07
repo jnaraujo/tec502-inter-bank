@@ -43,8 +43,15 @@ func PayRoute(c *fiber.Ctx) error {
 	}
 
 	transaction := storage.Transactions.CreateTransaction(
-		body.FromUserIBK, body.ToUserIBK,
-		body.Amount, models.TransactionTypeTransfer,
+		body.FromUserIBK,
+		[]models.Operation{
+			*models.NewOperation(
+				body.FromUserIBK,
+				body.ToUserIBK,
+				models.OperationTypeTransfer,
+				body.Amount,
+			),
+		},
 	)
 
 	// transação interna
@@ -84,22 +91,27 @@ func PayRoute(c *fiber.Ctx) error {
 
 	transaction = storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusSuccess)
 
-	return c.Status(http.StatusNotImplemented).JSON(&transaction)
+	return c.Status(http.StatusOK).JSON(&transaction)
 }
 
 func handleInternalTransaction(c *fiber.Ctx, transaction models.Transaction) error {
-	fromUserId := int(transaction.From.UserId)
-	toUserId := int(transaction.To.UserId)
+	for _, op := range transaction.Operations {
+		fromUserId := int(op.From.UserId)
+		toUserId := int(op.To.UserId)
 
-	err := storage.Users.TransferBalance(fromUserId, toUserId, transaction.Amount)
-	if err != nil {
-		storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
-		return c.Status(http.StatusInternalServerError).JSON(&fiber.Map{
-			"error": err.Error(),
-		})
+		err := storage.Users.TransferBalance(fromUserId, toUserId, op.Amount)
+		if err != nil {
+			storage.Transactions.UpdateOperationStatus(transaction, op, models.OperationStatusFailed)
+			storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
+
+			return c.Status(http.StatusInternalServerError).JSON(&fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		storage.Transactions.UpdateOperationStatus(transaction, op, models.OperationStatusSuccess)
 	}
 
 	transaction = storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusSuccess)
-
-	return c.Status(http.StatusInternalServerError).JSON(&transaction)
+	return c.Status(http.StatusOK).JSON(&transaction)
 }

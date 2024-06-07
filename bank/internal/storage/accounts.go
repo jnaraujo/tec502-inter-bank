@@ -23,6 +23,8 @@ var Users = &accountsStorage{
 
 func (as *accountsStorage) CreateAccount(name, document string) models.Account {
 	as.mu.Lock()
+	defer as.mu.Unlock()
+
 	user := models.Account{
 		Id:        len(as.data) + 1,
 		Name:      name,
@@ -37,7 +39,6 @@ func (as *accountsStorage) CreateAccount(name, document string) models.Account {
 	}
 
 	as.data[user.Id] = user
-	as.mu.Unlock()
 
 	return user
 }
@@ -51,26 +52,27 @@ func (as *accountsStorage) FindUserById(id int) (models.Account, bool) {
 
 func (as *accountsStorage) FindUserByDocument(document string) (models.Account, bool) {
 	as.mu.RLock()
+	defer as.mu.RUnlock()
+
 	for _, user := range as.data {
 		if user.Document == document {
 			return user, true
 		}
 	}
-	as.mu.RUnlock()
 	return models.Account{}, false
 }
 
 func (as *accountsStorage) AddToUserBalance(userId int, amount decimal.Decimal) (models.Account, bool) {
 	as.mu.Lock()
+	defer as.mu.Unlock()
+
 	user, ok := as.data[userId]
 	if !ok {
-		as.mu.Unlock()
 		return models.Account{}, ok
 	}
 
 	user.Balance = user.Balance.Add(amount)
 	as.data[userId] = user
-	as.mu.Unlock()
 
 	return user, ok
 }
@@ -96,20 +98,19 @@ func (as *accountsStorage) SubFromUserBalance(userId int, amount decimal.Decimal
 
 func (as *accountsStorage) TransferBalance(from, to int, amount decimal.Decimal) error {
 	as.mu.Lock()
+	defer as.mu.Unlock()
+
 	fromUser, ok := as.data[from]
 	if !ok {
-		as.mu.Unlock()
 		return errors.New("sender not found")
 	}
 
 	toUser, ok := as.data[to]
 	if !ok {
-		as.mu.Unlock()
 		return errors.New("receiver not found")
 	}
 
 	if fromUser.Balance.LessThan(amount) {
-		as.mu.Unlock()
 		return errors.New("insufficient funds")
 	}
 
@@ -118,7 +119,6 @@ func (as *accountsStorage) TransferBalance(from, to int, amount decimal.Decimal)
 
 	as.data[from] = fromUser
 	as.data[to] = toUser
-	as.mu.Unlock()
 
 	return nil
 }
