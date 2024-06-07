@@ -7,11 +7,11 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type User struct {
+type Account struct {
 	Id           int             `json:"id"`
 	Name         string          `json:"name"`
-	Email        string          `json:"email"`
+	Document     string          `json:"document"`
+	InterBankKey interbank.IBK   `json:"ibk"`
 	CreatedAt    time.Time       `json:"created_at"`
 	Balance      decimal.Decimal `json:"balance"`
-	InterBankKey interbank.IBK   `json:"ibk"`
 }
