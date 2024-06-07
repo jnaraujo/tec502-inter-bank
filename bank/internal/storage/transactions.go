@@ -20,7 +20,7 @@ var Transactions = &transactionsStorage{
 	data: make(map[int]models.Transaction),
 }
 
-func (ts *transactionsStorage) CreateTransaction(from, to interbank.UserKey, amount decimal.Decimal, transactionType models.TransactionType) models.Transaction {
+func (ts *transactionsStorage) CreateTransaction(from, to interbank.IBK, amount decimal.Decimal, transactionType models.TransactionType) models.Transaction {
 	ts.mu.Lock()
 
 	transaction := models.Transaction{
@@ -40,7 +40,7 @@ func (ts *transactionsStorage) CreateTransaction(from, to interbank.UserKey, amo
 	return transaction
 }
 
-func (ts *transactionsStorage) CreateDepositTransaction(from interbank.UserKey, amount decimal.Decimal, transactionType models.TransactionType) models.Transaction {
+func (ts *transactionsStorage) CreateDepositTransaction(from interbank.IBK, amount decimal.Decimal, transactionType models.TransactionType) models.Transaction {
 	ts.mu.Lock()
 
 	transaction := models.Transaction{

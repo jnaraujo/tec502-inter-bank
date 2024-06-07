@@ -25,12 +25,12 @@ const (
 )
 
 type Transaction struct {
-	Id        int                `json:"id"`
-	From      interbank.UserKey  `json:"from"`
-	To        *interbank.UserKey `json:"to,omitempty"`
-	Amount    decimal.Decimal    `json:"amount"`
-	Type      TransactionType    `json:"type"`
-	CreatedAt time.Time          `json:"created_at"`
-	UpdatedAt time.Time          `json:"updated_at"`
-	Status    TransactionStatus  `json:"status"`
+	Id        int               `json:"id"`
+	From      interbank.IBK     `json:"from"`
+	To        *interbank.IBK    `json:"to,omitempty"`
+	Amount    decimal.Decimal   `json:"amount"`
+	Type      TransactionType   `json:"type"`
+	CreatedAt time.Time         `json:"created_at"`
+	UpdatedAt time.Time         `json:"updated_at"`
+	Status    TransactionStatus `json:"status"`
 }

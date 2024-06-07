@@ -22,7 +22,7 @@ type PaymentRequestResponse struct {
 	Code Code
 }
 
-func SendPaymentRequest(from, to UserKey, amount decimal.Decimal) (*PaymentRequestResponse, error) {
+func SendPaymentRequest(from, to IBK, amount decimal.Decimal) (*PaymentRequestResponse, error) {
 	body := map[string]any{
 		"from_user_ibk": from,
 		"to_user_ibk":   to,

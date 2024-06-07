@@ -31,7 +31,7 @@ func (us *usersStorage) CreateUser(name, email string) models.User {
 		Balance:   decimal.NewFromInt(0),
 	}
 
-	user.InterBankKey = interbank.UserKey{
+	user.InterBankKey = interbank.IBK{
 		BankId: config.Env.BankId,
 		UserId: interbank.NewUserId(uint32(user.Id)),
 	}

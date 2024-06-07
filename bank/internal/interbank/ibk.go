@@ -12,12 +12,12 @@ import (
 type BankId uint16
 type UserId uint32
 
-type UserKey struct {
+type IBK struct {
 	BankId BankId
 	UserId UserId
 }
 
-func NewUserKeyFromStr(value string) (*UserKey, error) {
+func NewIBKFromStr(value string) (*IBK, error) {
 	if !bytes.Contains([]byte(value), []byte("-")) {
 		return nil, errors.New("invalid user key format")
 	}
@@ -40,27 +40,27 @@ func NewUserKeyFromStr(value string) (*UserKey, error) {
 		return nil, errors.New("invalid user id")
 	}
 
-	return NewUserKey(uint16(bankId), uint32(userId)), nil
+	return NewIBK(uint16(bankId), uint32(userId)), nil
 }
 
-func NewUserKey(bankId uint16, userId uint32) *UserKey {
-	return &UserKey{
+func NewIBK(bankId uint16, userId uint32) *IBK {
+	return &IBK{
 		BankId: BankId(bankId),
 		UserId: UserId(userId),
 	}
 }
 
-func (uk UserKey) String() string {
+func (uk IBK) String() string {
 	return fmt.Sprintf("%d-%d", uk.BankId, uk.UserId)
 }
 
-func (uk *UserKey) UnmarshalJSON(b []byte) error {
+func (uk *IBK) UnmarshalJSON(b []byte) error {
 	var s string
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
 
-	ptr, err := NewUserKeyFromStr(s)
+	ptr, err := NewIBKFromStr(s)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (uk *UserKey) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-func (uk UserKey) MarshalJSON() ([]byte, error) {
+func (uk IBK) MarshalJSON() ([]byte, error) {
 	return json.Marshal(uk.String())
 }
 

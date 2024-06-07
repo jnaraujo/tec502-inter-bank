@@ -13,9 +13,9 @@ import (
 )
 
 type payRouteBodySchema struct {
-	FromUserIBK interbank.UserKey `json:"from_user_ibk" validate:"required"`
-	ToUserIBK   interbank.UserKey `json:"to_user_ibk" validate:"required"`
-	Amount      decimal.Decimal   `json:"amount" validate:"required"`
+	FromUserIBK interbank.IBK   `json:"from_user_ibk" validate:"required"`
+	ToUserIBK   interbank.IBK   `json:"to_user_ibk" validate:"required"`
+	Amount      decimal.Decimal `json:"amount" validate:"required"`
 }
 
 func PayRoute(c *fiber.Ctx) error {

@@ -5,6 +5,6 @@ import (
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank"
 )
 
-func IsLocalUserIBK(ibk interbank.UserKey) bool {
+func IsLocalUserIBK(ibk interbank.IBK) bool {
 	return ibk.BankId == config.Env.BankId
 }
