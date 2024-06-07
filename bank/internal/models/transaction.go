@@ -23,3 +23,14 @@ type Transaction struct {
 	UpdatedAt  time.Time         `json:"updated_at"`
 	Status     TransactionStatus `json:"status"`
 }
+
+func NewTransaction(author interbank.IBK, operations []Operation) *Transaction {
+	return &Transaction{
+		Id:         uuid.New(),
+		Author:     author,
+		Operations: operations,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+		Status:     TransactionStatusPending,
+	}
+}

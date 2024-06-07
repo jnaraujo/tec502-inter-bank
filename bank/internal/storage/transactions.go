@@ -21,45 +21,27 @@ var Transactions = &transactionsStorage{
 	data: make(map[uuid.UUID]models.Transaction),
 }
 
-func (ts *transactionsStorage) CreateTransaction(author interbank.IBK, operations []models.Operation) models.Transaction {
+func (ts *transactionsStorage) Save(tr models.Transaction) {
 	ts.mu.Lock()
+	ts.data[tr.Id] = tr
 	defer ts.mu.Unlock()
-
-	transaction := models.Transaction{
-		Id:         uuid.New(),
-		Author:     author,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
-		Status:     models.TransactionStatusPending,
-		Operations: operations,
-	}
-	ts.data[transaction.Id] = transaction
-
-	return transaction
 }
 
 func (ts *transactionsStorage) CreateDepositTransaction(author interbank.IBK, amount decimal.Decimal) models.Transaction {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
-	operation := models.Operation{
-		From:      author,
-		To:        author,
-		Type:      models.OperationTypeDeposit,
-		Amount:    amount,
-		Status:    models.OperationStatusPending,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
+	operation := *models.NewOperation(
+		author,
+		author,
+		models.OperationTypeDeposit,
+		amount,
+	)
 
-	transaction := models.Transaction{
-		Id:         uuid.New(),
-		Author:     author,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
-		Status:     models.TransactionStatusPending,
-		Operations: []models.Operation{operation},
-	}
+	transaction := *models.NewTransaction(
+		author,
+		[]models.Operation{operation},
+	)
 	ts.data[transaction.Id] = transaction
 
 	return transaction

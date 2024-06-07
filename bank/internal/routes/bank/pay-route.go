@@ -42,17 +42,16 @@ func PayRoute(c *fiber.Ctx) error {
 		})
 	}
 
-	transaction := storage.Transactions.CreateTransaction(
-		body.FromUserIBK,
-		[]models.Operation{
-			*models.NewOperation(
-				body.FromUserIBK,
-				body.ToUserIBK,
-				models.OperationTypeTransfer,
-				body.Amount,
-			),
-		},
-	)
+	transaction := *models.NewTransaction(body.FromUserIBK, []models.Operation{
+		*models.NewOperation(
+			body.FromUserIBK,
+			body.ToUserIBK,
+			models.OperationTypeTransfer,
+			body.Amount,
+		),
+	})
+
+	storage.Transactions.Save(transaction)
 
 	// transação interna
 	if utils.IsLocalUserIBK(body.ToUserIBK) {
