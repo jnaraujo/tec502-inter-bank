@@ -75,21 +75,8 @@ func (ts *transactionsStorage) UpdateOperationStatus(t models.Transaction, op mo
 
 	op.Status = status
 
-	found := false
-	for idx, o := range t.Operations {
-		if o.Id == op.Id {
-			t.Operations[idx] = op
-			found = true
-		}
-	}
-
-	if !found {
-		return false
-	}
-
-	ts.data[t.Id] = t
-
-	return true
+	found := t.UpdateOperation(op)
+	return found
 }
 
 func (ts *transactionsStorage) UpdateTransactionStatus(t models.Transaction, s models.TransactionStatus) models.Transaction {

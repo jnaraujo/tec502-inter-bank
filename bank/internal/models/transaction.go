@@ -34,3 +34,13 @@ func NewTransaction(author interbank.IBK, operations []Operation) *Transaction {
 		Status:     TransactionStatusPending,
 	}
 }
+
+func (tr *Transaction) UpdateOperation(operation Operation) bool {
+	for idx := range tr.Operations {
+		if tr.Operations[idx].Id == operation.Id {
+			tr.Operations[idx] = operation
+			return true
+		}
+	}
+	return false
+}
