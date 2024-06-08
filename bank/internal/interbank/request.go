@@ -13,16 +13,16 @@ import (
 type Code string
 
 const (
-	TransferSuccess  Code = "transfer_success"
+	OperationSuccess Code = "operation_success"
 	WrongBankCode    Code = "wrong_bank_code"
 	ReceiverNotFound Code = "receiver_not_found"
 )
 
-type PaymentRequestResponse struct {
+type IBKResponse struct {
 	Code Code
 }
 
-func SendPaymentRequest(from, to IBK, amount decimal.Decimal) (*PaymentRequestResponse, error) {
+func SendPaymentRequest(from, to IBK, amount decimal.Decimal) (*IBKResponse, error) {
 	body := map[string]any{
 		"from_user_ibk": from,
 		"to_user_ibk":   to,
@@ -39,7 +39,7 @@ func SendPaymentRequest(from, to IBK, amount decimal.Decimal) (*PaymentRequestRe
 		return nil, errors.New("could not read response")
 	}
 
-	jsonResp := PaymentRequestResponse{}
+	jsonResp := IBKResponse{}
 	err = json.Unmarshal(resBody, &jsonResp)
 	if err != nil {
 		return nil, errors.New("invalid response")

@@ -79,7 +79,7 @@ func PayRoute(c *fiber.Ctx) error {
 		})
 	}
 
-	if resp.Code != interbank.TransferSuccess {
+	if resp.Code != interbank.OperationSuccess {
 		storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
 		storage.Users.AddToUserBalance(fromUserId, body.Amount)
 
