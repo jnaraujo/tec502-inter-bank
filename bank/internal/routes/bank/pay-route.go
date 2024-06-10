@@ -1,7 +1,6 @@
 package bank
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
@@ -64,7 +63,6 @@ func PayRoute(c *fiber.Ctx) error {
 
 	err := service.SubCredit(int(body.From.BankId), body.From, body.Amount)
 	if err != nil {
-		fmt.Println("sub")
 		storage.Transactions.UpdateOperationStatus(transaction, transaction.Operations[0], models.OperationStatusFailed)
 		storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
 
@@ -74,7 +72,6 @@ func PayRoute(c *fiber.Ctx) error {
 	}
 	err = service.AddCredit(int(body.To.BankId), body.To, body.Amount)
 	if err != nil {
-		fmt.Println("add")
 		storage.Transactions.UpdateOperationStatus(transaction, transaction.Operations[0], models.OperationStatusFailed)
 		storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
 
