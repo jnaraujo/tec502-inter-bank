@@ -45,6 +45,10 @@ func (as *accountsStorage) FindUserById(id int) (models.Account, bool) {
 	return user, ok
 }
 
+func (as *accountsStorage) Delete(id int) {
+	delete(as.data, id)
+}
+
 func (as *accountsStorage) FindUserByDocument(document string) (models.Account, bool) {
 	for _, user := range as.data {
 		if user.Document == document {
