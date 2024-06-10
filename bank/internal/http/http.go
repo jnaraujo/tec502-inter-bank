@@ -43,5 +43,8 @@ func registerBankRoutes(app *fiber.App) {
 func registerInterBankRoutes(app *fiber.App) {
 	router := app.Group("/interbank")
 
-	router.Post("/transfer", interbank.TransferRoute)
+	router.Post("/lock", interbank.LockRoute)
+	router.Post("/unlock", interbank.UnlockRoute)
+	router.Post("/add-credit", interbank.AddCreditRoute)
+	router.Post("/sub-credit", interbank.SubCreditRoute)
 }

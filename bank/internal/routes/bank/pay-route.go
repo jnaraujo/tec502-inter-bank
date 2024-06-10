@@ -1,10 +1,12 @@
 package bank
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank"
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank/service"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/models"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/utils"
@@ -13,9 +15,9 @@ import (
 )
 
 type payRouteBodySchema struct {
-	FromUserIBK interbank.IBK   `json:"from_user_ibk" validate:"required"`
-	ToUserIBK   interbank.IBK   `json:"to_user_ibk" validate:"required"`
-	Amount      decimal.Decimal `json:"amount" validate:"required"`
+	From   interbank.IBK   `json:"from_user_ibk" validate:"required"`
+	To     interbank.IBK   `json:"to_user_ibk" validate:"required"`
+	Amount decimal.Decimal `json:"amount" validate:"required"`
 }
 
 func PayRoute(c *fiber.Ctx) error {
@@ -24,13 +26,13 @@ func PayRoute(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
 	}
 
-	if !utils.IsLocalUserIBK(body.FromUserIBK) {
+	if !utils.IsLocalUserIBK(body.From) {
 		return c.Status(http.StatusForbidden).JSON(&fiber.Map{
 			"message": "Sender must be from this bank",
 		})
 	}
 
-	if body.FromUserIBK == body.ToUserIBK {
+	if body.From == body.To {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
 			"message": "Sender and receiver must be different",
 		})
@@ -42,75 +44,49 @@ func PayRoute(c *fiber.Ctx) error {
 		})
 	}
 
-	transaction := *models.NewTransaction(body.FromUserIBK, []models.Operation{
+	transaction := *models.NewTransaction(body.From, []models.Operation{
 		*models.NewOperation(
-			body.FromUserIBK,
-			body.ToUserIBK,
+			body.From,
+			body.To,
 			models.OperationTypeTransfer,
 			body.Amount,
 		),
 	})
-
 	storage.Transactions.Save(transaction)
 
-	// transação interna
-	if utils.IsLocalUserIBK(body.ToUserIBK) {
-		return handleInternalTransaction(
-			c,
-			transaction,
-		)
-	}
+	service.BeginTransaction(int(body.From.BankId))
+	service.BeginTransaction(int(body.To.BankId))
 
-	fromUserId := int(body.FromUserIBK.UserId)
-	err := storage.Users.SubFromUserBalance(fromUserId, body.Amount)
+	defer func() {
+		service.CommitTransaction(int(body.From.BankId))
+		service.CommitTransaction(int(body.To.BankId))
+	}()
+
+	err := service.SubCredit(int(body.From.BankId), body.From, body.Amount)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(&fiber.Map{
-			"error": err.Error(),
+		fmt.Println("sub")
+		storage.Transactions.UpdateOperationStatus(transaction, transaction.Operations[0], models.OperationStatusFailed)
+		storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
+
+		return c.Status(http.StatusForbidden).JSON(&fiber.Map{
+			"message": err.Error(),
 		})
 	}
-
-	resp, err := interbank.SendPaymentRequest(body.FromUserIBK, body.ToUserIBK, body.Amount)
+	err = service.AddCredit(int(body.To.BankId), body.To, body.Amount)
 	if err != nil {
+		fmt.Println("add")
+		storage.Transactions.UpdateOperationStatus(transaction, transaction.Operations[0], models.OperationStatusFailed)
 		storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
-		storage.Users.AddToUserBalance(fromUserId, body.Amount)
 
-		return c.Status(http.StatusInternalServerError).JSON(&fiber.Map{
-			"error": err.Error(),
+		// Rollback
+		service.AddCredit(int(body.From.BankId), body.From, body.Amount)
+
+		return c.Status(http.StatusForbidden).JSON(&fiber.Map{
+			"message": err.Error(),
 		})
 	}
 
-	if resp.Code != interbank.OperationSuccess {
-		storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
-		storage.Users.AddToUserBalance(fromUserId, body.Amount)
-
-		return c.Status(http.StatusInternalServerError).JSON(&fiber.Map{
-			"error": resp.Code,
-		})
-	}
-
-	transaction = storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusSuccess)
-
-	return c.Status(http.StatusOK).JSON(&transaction)
-}
-
-func handleInternalTransaction(c *fiber.Ctx, transaction models.Transaction) error {
-	for _, op := range transaction.Operations {
-		fromUserId := int(op.From.UserId)
-		toUserId := int(op.To.UserId)
-
-		err := storage.Users.TransferBalance(fromUserId, toUserId, op.Amount)
-		if err != nil {
-			storage.Transactions.UpdateOperationStatus(transaction, op, models.OperationStatusFailed)
-			storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
-
-			return c.Status(http.StatusInternalServerError).JSON(&fiber.Map{
-				"error": err.Error(),
-			})
-		}
-
-		storage.Transactions.UpdateOperationStatus(transaction, op, models.OperationStatusSuccess)
-	}
-
-	transaction = storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusSuccess)
-	return c.Status(http.StatusOK).JSON(&transaction)
+	return c.Status(http.StatusOK).JSON(&fiber.Map{
+		"message": "success",
+	})
 }

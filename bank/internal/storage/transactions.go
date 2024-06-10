@@ -49,7 +49,10 @@ func (ts *transactionsStorage) CreateDepositTransaction(author interbank.IBK, am
 
 func (ts *transactionsStorage) FindUserTransactionsById(userId int) []models.Transaction {
 	transactions := []models.Transaction{}
-	user, _ := Users.FindUserById(userId)
+
+	Accounts.RLock()
+	user, _ := Accounts.FindUserById(userId)
+	Accounts.RUnlock()
 
 	ts.mu.RLock()
 	for _, t := range ts.data {
@@ -88,4 +91,11 @@ func (ts *transactionsStorage) UpdateTransactionStatus(t models.Transaction, s m
 	ts.data[t.Id] = t
 
 	return t
+}
+
+func (ts *transactionsStorage) FindTransactionById(id uuid.UUID) *models.Transaction {
+	ts.mu.RLock()
+	defer ts.mu.RUnlock()
+	tr := ts.data[id]
+	return &tr
 }
