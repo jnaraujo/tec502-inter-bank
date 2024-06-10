@@ -3,6 +3,7 @@ package storage
 import (
 	"errors"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/config"
@@ -21,9 +22,12 @@ var Accounts = &accountsStorage{
 	data: make(map[int]models.Account),
 }
 
+var accCounter atomic.Int64
+
 func (as *accountsStorage) CreateAccount(name, document string) models.Account {
+	id := accCounter.Add(1)
 	user := models.Account{
-		Id:        len(as.data) + 1,
+		Id:        int(id),
 		Name:      name,
 		Document:  document,
 		CreatedAt: time.Now(),
