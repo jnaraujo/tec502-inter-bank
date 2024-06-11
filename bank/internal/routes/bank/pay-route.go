@@ -8,15 +8,19 @@ import (
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank/service"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/models"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
-	"github.com/jnaraujo/tec502-inter-bank/bank/internal/utils"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/validate"
 	"github.com/shopspring/decimal"
 )
 
-type payRouteBodySchema struct {
+type operationSchema struct {
 	From   interbank.IBK   `json:"from_user_ibk" validate:"required"`
 	To     interbank.IBK   `json:"to_user_ibk" validate:"required"`
 	Amount decimal.Decimal `json:"amount" validate:"required"`
+}
+
+type payRouteBodySchema struct {
+	Author     interbank.IBK     `json:"author" validate:"required"`
+	Operations []operationSchema `json:"operations" validate:"required,min=1"`
 }
 
 func PayRoute(c *fiber.Ctx) error {
@@ -25,63 +29,56 @@ func PayRoute(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
 	}
 
-	if !utils.IsLocalUserIBK(body.From) {
-		return c.Status(http.StatusForbidden).JSON(&fiber.Map{
-			"message": "Sender must be from this bank",
-		})
+	var operations []models.Operation
+	for _, op := range body.Operations {
+		// TODO: verificar se as operações são do mesmo usuário
+
+		if op.From == op.To {
+			return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
+				"message": "Sender and receiver must be different",
+			})
+		}
+
+		if op.Amount.LessThanOrEqual(decimal.NewFromInt(0)) {
+			return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
+				"message": "Amount must be greater than 0",
+			})
+		}
+
+		operations = append(operations, *models.NewOperation(op.From, op.To, models.OperationTypeTransfer, op.Amount))
 	}
 
-	if body.From == body.To {
-		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
-			"message": "Sender and receiver must be different",
-		})
-	}
-
-	if body.Amount.LessThanOrEqual(decimal.NewFromInt(0)) {
-		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
-			"message": "Amount must be greater than 0",
-		})
-	}
-
-	transaction := *models.NewTransaction(body.From, []models.Operation{
-		*models.NewOperation(
-			body.From,
-			body.To,
-			models.OperationTypeTransfer,
-			body.Amount,
-		),
-	})
+	transaction := *models.NewTransaction(body.Author, operations)
 	storage.Transactions.Save(transaction)
 
-	service.BeginTransaction(int(body.From.BankId))
-	service.BeginTransaction(int(body.To.BankId))
-
+	service.LockAccountsFromTransaction(transaction)
 	defer func() {
-		service.CommitTransaction(int(body.From.BankId))
-		service.CommitTransaction(int(body.To.BankId))
+		service.UnlockAccountsFromTransaction(transaction)
 	}()
 
-	err := service.SubCredit(int(body.From.BankId), body.From, body.Amount)
-	if err != nil {
-		storage.Transactions.UpdateOperationStatus(transaction, transaction.Operations[0], models.OperationStatusFailed)
-		storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
+	for _, op := range transaction.Operations {
+		err := service.SubCredit(int(op.From.BankId), op.From, op.Amount)
+		if err != nil {
+			service.RollbackOperations(transaction)
+			return c.Status(http.StatusForbidden).JSON(&fiber.Map{
+				"message": err.Error(),
+			})
+		}
 
-		return c.Status(http.StatusForbidden).JSON(&fiber.Map{
-			"message": err.Error(),
-		})
+		err = service.AddCredit(int(op.To.BankId), op.To, op.Amount)
+		if err != nil {
+			// como falou na segunda parte, reverte a primeira parte
+			service.AddCredit(int(op.From.BankId), op.From, op.Amount)
+			service.RollbackOperations(transaction)
+			return c.Status(http.StatusForbidden).JSON(&fiber.Map{
+				"message": err.Error(),
+			})
+		}
+
+		storage.Transactions.UpdateOperationStatus(transaction, op, models.OperationStatusSuccess)
 	}
-	err = service.AddCredit(int(body.To.BankId), body.To, body.Amount)
-	if err != nil {
-		storage.Transactions.UpdateOperationStatus(transaction, transaction.Operations[0], models.OperationStatusFailed)
-		storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
 
-		// Rollback
-		service.AddCredit(int(body.From.BankId), body.From, body.Amount)
-
-		return c.Status(http.StatusForbidden).JSON(&fiber.Map{
-			"message": err.Error(),
-		})
-	}
+	storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusSuccess)
 
 	return c.Status(http.StatusOK).JSON(&fiber.Map{
 		"message": "success",

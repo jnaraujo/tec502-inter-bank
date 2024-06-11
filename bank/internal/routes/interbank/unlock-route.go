@@ -8,6 +8,12 @@ import (
 )
 
 func UnlockRoute(c *fiber.Ctx) error {
+	if !storage.Accounts.IsLocked() {
+		return c.Status(http.StatusConflict).JSON(fiber.Map{
+			"message": "accounts are not locked",
+		})
+	}
+
 	storage.Accounts.Unlock()
 
 	return c.Status(http.StatusOK).JSON(fiber.Map{
