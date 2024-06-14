@@ -19,19 +19,13 @@ func CreateAccountRoute(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
 	}
 
-	storage.Accounts.RLock()
 	_, exists := storage.Accounts.FindUserByDocument(body.Document)
-	storage.Accounts.RUnlock()
-
 	if exists {
 		return c.Status(http.StatusConflict).JSON(&fiber.Map{
 			"error": "user already exists",
 		})
 	}
 
-	storage.Accounts.Lock()
 	user := storage.Accounts.CreateAccount(body.Name, body.Document)
-	storage.Accounts.Unlock()
-
 	return c.Status(http.StatusCreated).JSON(&user)
 }

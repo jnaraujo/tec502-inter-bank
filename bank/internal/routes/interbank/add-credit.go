@@ -21,12 +21,6 @@ func AddCreditRoute(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
 	}
 
-	if !storage.Accounts.IsLocked() {
-		return c.Status(http.StatusForbidden).JSON(&fiber.Map{
-			"message": "You must start a transaction.",
-		})
-	}
-
 	_, ok := storage.Accounts.AddToUserBalance(int(body.To.UserId), body.Amount)
 	if !ok {
 		return c.Status(http.StatusNotFound).JSON(&fiber.Map{

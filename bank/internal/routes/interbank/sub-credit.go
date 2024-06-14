@@ -21,12 +21,6 @@ func SubCreditRoute(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
 	}
 
-	if !storage.Accounts.IsLocked() {
-		return c.Status(http.StatusForbidden).JSON(&fiber.Map{
-			"message": "You must start a transaction.",
-		})
-	}
-
 	err := storage.Accounts.SubFromUserBalance(int(body.From.UserId), body.Amount)
 	if err != nil {
 		return c.Status(http.StatusForbidden).JSON(&fiber.Map{

@@ -15,19 +15,14 @@ func DeleteAccountRoute(c *fiber.Ctx) error {
 		})
 	}
 
-	storage.Accounts.RLock()
 	_, exists := storage.Accounts.FindUserById(id)
-	storage.Accounts.RUnlock()
-
 	if !exists {
 		return c.Status(http.StatusNotFound).JSON(&fiber.Map{
 			"message": "user not found",
 		})
 	}
 
-	storage.Accounts.Lock()
 	storage.Accounts.Delete(id)
-	storage.Accounts.Unlock()
 
 	return c.Status(http.StatusOK).JSON(&fiber.Map{
 		"message": "account deleted",
