@@ -31,10 +31,8 @@ func (ts *transactionsStorage) CreateDepositTransaction(author interbank.IBK, am
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
-	operation := *models.NewOperation(
+	operation := *models.NewDepositOperation(
 		author,
-		author,
-		models.OperationTypeDeposit,
 		amount,
 	)
 

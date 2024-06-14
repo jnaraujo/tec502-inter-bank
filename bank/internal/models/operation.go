@@ -19,16 +19,14 @@ const (
 type OperationType string
 
 const (
-	OperationTypeDeposit  OperationType = "deposit"  // Depósito de dinheiro
-	OperationTypeWithdraw OperationType = "withdraw" // Saque de dinheiro
-	OperationTypeTransfer OperationType = "transfer" // Transferência de dinheiro
-	OperationTypePayment  OperationType = "payment"  // Pagamento de boleto, fatura, etc
+	OperationTypeAdd     OperationType = "add"     // Adiciona dinheiro
+	OperationTypeSub     OperationType = "sub"     // Subtrai dinheiro
+	OperationTypeDeposit OperationType = "deposit" // Adiciona dinheiro
 )
 
 type Operation struct {
 	Id        uuid.UUID
-	From      interbank.IBK   `json:"from"`
-	To        interbank.IBK   `json:"to"`
+	User      interbank.IBK   `json:"user"`
 	Type      OperationType   `json:"type"`
 	Amount    decimal.Decimal `json:"amount"`
 	Status    OperationStatus `json:"status"`
@@ -36,15 +34,35 @@ type Operation struct {
 	UpdatedAt time.Time       `json:"updated_at"`
 }
 
-func NewOperation(from, to interbank.IBK, opType OperationType, amount decimal.Decimal) *Operation {
+func NewOperation(user interbank.IBK, opType OperationType, amount decimal.Decimal) *Operation {
 	return &Operation{
 		Id:        uuid.New(),
-		From:      from,
-		To:        to,
+		User:      user,
 		Type:      opType,
 		Amount:    amount,
 		Status:    OperationStatusPending,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
+}
+
+func NewAddOperation(user interbank.IBK, amount decimal.Decimal) *Operation {
+	return NewOperation(user, OperationTypeAdd, amount)
+}
+
+func NewSubOperation(user interbank.IBK, amount decimal.Decimal) *Operation {
+	return NewOperation(user, OperationTypeSub, amount)
+}
+
+func NewDepositOperation(user interbank.IBK, amount decimal.Decimal) *Operation {
+	return NewOperation(user, OperationTypeDeposit, amount)
+}
+
+func NewTransferOperations(from, to interbank.IBK, amount decimal.Decimal) []Operation {
+	operations := []Operation{}
+
+	operations = append(operations, *NewSubOperation(from, amount))
+	operations = append(operations, *NewAddOperation(to, amount))
+
+	return operations
 }

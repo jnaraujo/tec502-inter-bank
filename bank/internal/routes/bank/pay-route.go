@@ -5,7 +5,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank"
-	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank/service"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/models"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/validate"
@@ -45,40 +44,12 @@ func PayRoute(c *fiber.Ctx) error {
 			})
 		}
 
-		operations = append(operations, *models.NewOperation(op.From, op.To, models.OperationTypeTransfer, op.Amount))
+		ops := models.NewTransferOperations(op.From, op.To, op.Amount)
+		operations = append(operations, ops...)
 	}
 
 	transaction := *models.NewTransaction(body.Author, operations)
 	storage.Transactions.Save(transaction)
-
-	service.LockAccountsFromTransaction(transaction)
-	defer func() {
-		service.UnlockAccountsFromTransaction(transaction)
-	}()
-
-	for _, op := range transaction.Operations {
-		err := service.SubCredit(int(op.From.BankId), op.From, op.Amount)
-		if err != nil {
-			service.RollbackOperations(transaction)
-			return c.Status(http.StatusForbidden).JSON(&fiber.Map{
-				"message": err.Error(),
-			})
-		}
-
-		err = service.AddCredit(int(op.To.BankId), op.To, op.Amount)
-		if err != nil {
-			// como falou na segunda parte, reverte a primeira parte
-			service.AddCredit(int(op.From.BankId), op.From, op.Amount)
-			service.RollbackOperations(transaction)
-			return c.Status(http.StatusForbidden).JSON(&fiber.Map{
-				"message": err.Error(),
-			})
-		}
-
-		storage.Transactions.UpdateOperationStatus(transaction, op, models.OperationStatusSuccess)
-	}
-
-	storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusSuccess)
 
 	return c.Status(http.StatusOK).JSON(&fiber.Map{
 		"message": "success",
