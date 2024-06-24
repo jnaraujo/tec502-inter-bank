@@ -19,14 +19,16 @@ const (
 type OperationType string
 
 const (
-	OperationTypeAdd     OperationType = "add"     // Adiciona dinheiro
-	OperationTypeSub     OperationType = "sub"     // Subtrai dinheiro
-	OperationTypeDeposit OperationType = "deposit" // Adiciona dinheiro
+	OperationTypeDeposit  OperationType = "deposit"  // Depósito de dinheiro
+	OperationTypeWithdraw OperationType = "withdraw" // Saque de dinheiro
+	OperationTypeTransfer OperationType = "transfer" // Transferência de dinheiro
+	OperationTypePayment  OperationType = "payment"  // Pagamento de boleto, fatura, etc
 )
 
 type Operation struct {
 	Id        uuid.UUID
-	User      interbank.IBK   `json:"user"`
+	From      interbank.IBK   `json:"from"`
+	To        interbank.IBK   `json:"to"`
 	Type      OperationType   `json:"type"`
 	Amount    decimal.Decimal `json:"amount"`
 	Status    OperationStatus `json:"status"`
@@ -34,10 +36,11 @@ type Operation struct {
 	UpdatedAt time.Time       `json:"updated_at"`
 }
 
-func NewOperation(user interbank.IBK, opType OperationType, amount decimal.Decimal) *Operation {
+func NewOperation(from, to interbank.IBK, opType OperationType, amount decimal.Decimal) *Operation {
 	return &Operation{
 		Id:        uuid.New(),
-		User:      user,
+		From:      from,
+		To:        to,
 		Type:      opType,
 		Amount:    amount,
 		Status:    OperationStatusPending,
@@ -46,23 +49,6 @@ func NewOperation(user interbank.IBK, opType OperationType, amount decimal.Decim
 	}
 }
 
-func NewAddOperation(user interbank.IBK, amount decimal.Decimal) *Operation {
-	return NewOperation(user, OperationTypeAdd, amount)
-}
-
-func NewSubOperation(user interbank.IBK, amount decimal.Decimal) *Operation {
-	return NewOperation(user, OperationTypeSub, amount)
-}
-
 func NewDepositOperation(user interbank.IBK, amount decimal.Decimal) *Operation {
-	return NewOperation(user, OperationTypeDeposit, amount)
-}
-
-func NewTransferOperations(from, to interbank.IBK, amount decimal.Decimal) []Operation {
-	operations := []Operation{}
-
-	operations = append(operations, *NewSubOperation(from, amount))
-	operations = append(operations, *NewAddOperation(to, amount))
-
-	return operations
+	return NewOperation(user, user, OperationTypeDeposit, amount)
 }
