@@ -12,6 +12,7 @@ func RegisterInterBankRoutes(app *fiber.App) {
 	router.Post("/add-credit", interbank.AddCreditRoute)
 	router.Post("/sub-credit", interbank.SubCreditRoute)
 	router.Post("/token", interbank.ReceiveToken)
+	router.Get("/account/:document", interbank.FindAccountRoute)
 }
 
 func RegisterBankRoutes(app *fiber.App) {
@@ -23,6 +24,7 @@ func RegisterBankRoutes(app *fiber.App) {
 	router.Get("/accounts/:id", bank.FindAccountRoute)
 	router.Delete("/accounts/:id", bank.DeleteAccountRoute)
 	router.Get("/accounts/:id/transactions", bank.ListAccountTransactionsRoute)
+	router.Get("/accounts/:id/all", bank.FindAllAccountsRoute)
 
 	router.Post("/payments/deposit", bank.DepositRoute)
 	router.Post("/payments/pay", bank.PayRoute)
