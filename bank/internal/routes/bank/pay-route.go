@@ -44,12 +44,13 @@ func PayRoute(c *fiber.Ctx) error {
 			})
 		}
 
-		ops := models.NewTransferOperations(op.From, op.To, op.Amount)
-		operations = append(operations, ops...)
+		op := *models.NewOperation(op.From, op.To, models.OperationTypeTransfer, op.Amount)
+		operations = append(operations, op)
 	}
 
 	transaction := *models.NewTransaction(body.Author, operations)
 	storage.Transactions.Save(transaction)
+	storage.TransactionQueue.Add(transaction.Id)
 
 	return c.Status(http.StatusOK).JSON(&fiber.Map{
 		"message": "success",

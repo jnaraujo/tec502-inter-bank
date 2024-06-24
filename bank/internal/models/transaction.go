@@ -15,8 +15,10 @@ const (
 	TransactionStatusFailed  TransactionStatus = "failed"
 )
 
+type TransactionId = uuid.UUID
+
 type Transaction struct {
-	Id         uuid.UUID         `json:"id"`
+	Id         TransactionId     `json:"id"`
 	Author     interbank.IBK     `json:"author"`
 	Operations []Operation       `json:"operations"`
 	CreatedAt  time.Time         `json:"created_at"`
