@@ -1,77 +1,81 @@
+import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
-import { ArrowDownLeft, ArrowRight, ArrowUpRight } from "lucide-react"
+import {
+  ArrowDownLeft,
+  ArrowRight,
+  ArrowUpRight,
+  CircleCheckBig,
+  CircleDashed,
+  CircleX,
+} from "lucide-react"
 
-type TransactionType = "received" | "sent"
 type TransactionStatus = "success" | "pending" | "failed"
 
-interface Props {
+interface Operation {
   amount: number
-  author: string
-  type: TransactionType
+  from: string
+  to: string
+}
+
+interface Props {
   createdAt: string
   status: TransactionStatus
+  operations: Array<Operation>
 }
 
 export function TransactionBox(props: Props) {
+  const { user } = useAuth()
+
   function getLabel() {
-    if (props.type === "received") {
-      switch (props.status) {
-        case "success":
-          return "Transação recebida"
-        case "failed":
-          return "Recebimento falhou"
-        default:
-          return "Recebimento pendente"
-      }
-    } else if (props.type === "sent") {
-      switch (props.status) {
-        case "success":
-          return "Transação enviada"
-        case "failed":
-          return "Envio falhou"
-        default:
-          return "Envio pendente"
-      }
+    switch (props.status) {
+      case "success":
+        return "Transação realizada"
+      case "failed":
+        return "Transação falhou"
+      default:
+        return "Transação pendente"
     }
   }
 
   return (
     <div className="flex items-center space-x-3 px-2">
-      {props.type === "received" ? (
-        <ArrowDownLeft
-          className={cn("size-8", {
-            "text-green-500": props.status === "success",
-            "text-zinc-400": props.status === "pending",
-            "text-orange-600": props.status === "failed",
-          })}
-        />
-      ) : (
-        <ArrowUpRight
-          className={cn("size-8", {
-            "text-red-500": props.status === "success",
-            "text-zinc-400": props.status === "pending",
-            "text-orange-600": props.status === "failed",
-          })}
-        />
-      )}
+      {props.status === "success" ? (
+        <CircleCheckBig className="size-8 text-green-500" />
+      ) : null}
+      {props.status === "failed" ? (
+        <CircleX className="size-8 text-red-500" />
+      ) : null}
+      {props.status === "pending" ? (
+        <CircleDashed className="size-8 text-zinc-400" />
+      ) : null}
 
       <div className="h-full w-full space-y-0.5">
-        <span className="text-sm font-medium text-zinc-950">{getLabel()}</span>
         <h3
-          className={cn("text-2xl font-medium text-red-600", {
-            "text-red-600": props.type === "sent",
-            "text-green-600": props.type === "received",
-
-            "text-zinc-400": props.status === "pending",
-            "text-orange-600": props.status === "failed",
+          className={cn("text-sm font-medium", {
+            "text-green-600": props.status === "success",
+            "text-red-600": props.status === "failed",
+            "text-zinc-500": props.status === "pending",
           })}
         >
-          R$ {props.amount}
+          {getLabel()}
         </h3>
-        <div className="flex items-center gap-1">
-          <span className="text-sm text-zinc-500">José da Silva (1-1)</span>
-          <ArrowRight className="size-4 text-zinc-500" />
-          <span className="text-sm text-zinc-500">Mario da Silva (2-100)</span>
+
+        <div>
+          {props.operations.map((op) => (
+            <div className="flex items-center space-x-1">
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-zinc-500">De: {op.from}</span>
+                <ArrowRight className="size-4 text-zinc-500" />
+                <span className="text-sm text-zinc-500">Para: {op.to}</span>
+              </div>
+
+              {op.from === user?.ibk ? (
+                <ArrowDownLeft className="size-4 text-zinc-500" />
+              ) : (
+                <ArrowUpRight className="size-4 text-zinc-500" />
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
