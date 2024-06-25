@@ -26,7 +26,7 @@ const (
 )
 
 type Operation struct {
-	Id        uuid.UUID
+	Id        uuid.UUID       `json:"id"`
 	From      interbank.IBK   `json:"from"`
 	To        interbank.IBK   `json:"to"`
 	Type      OperationType   `json:"type"`
