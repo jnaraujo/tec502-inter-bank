@@ -11,8 +11,11 @@ func RegisterInterBankRoutes(app *fiber.App) {
 
 	router.Post("/add-credit", interbank.AddCreditRoute)
 	router.Post("/sub-credit", interbank.SubCreditRoute)
-	router.Post("/token", interbank.ReceiveToken)
 	router.Get("/account/:document", interbank.FindAccountRoute)
+
+	router.Post("/token", interbank.SetToken)
+	router.Get("/token", interbank.GetToken)
+	router.Get("/token/ok", interbank.CanReceiveToken)
 }
 
 func RegisterBankRoutes(app *fiber.App) {

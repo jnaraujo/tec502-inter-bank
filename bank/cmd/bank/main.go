@@ -8,6 +8,7 @@ import (
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/http"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/token_ring"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/transaction_processor"
 )
 
@@ -32,15 +33,33 @@ func main() {
 	storage.Ring.Add(interbank.NewBankId(1), "localhost:3001")
 	storage.Ring.Add(interbank.NewBankId(2), "localhost:3002")
 
+	signal := make(chan bool)
+
+	go func() {
+		// run http server on background
+		err = http.NewServer(config.Env.ServerPort)
+		if err != nil {
+			signal <- false
+		}
+	}()
+
 	if storage.Ring.FindBankWithLowestId().Id == config.Env.BankId {
 		fmt.Println("I'm the bank with the lowest id")
-		go func() {
-			transaction_processor.Process()
-		}()
+		// verifica se o token já esta na rede.
+		if !token_ring.IsTokenOnRing() {
+			// se não estiver, cria o token
+			token_ring.BroadcastToken(config.Env.BankId)
+		}
 	}
 
-	err = http.NewServer(config.Env.ServerPort)
-	if err != nil {
-		panic(err)
+	bank := token_ring.AskBankWithToken()
+	if bank != nil && bank.Owner == config.Env.BankId {
+		storage.Token.Set(*bank)
 	}
+
+	// inicia o processamento de transações em background
+	transaction_processor.BackgroundJob()
+
+	// aguarda o sinal de encerramento
+	<-signal
 }
