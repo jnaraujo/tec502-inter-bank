@@ -40,6 +40,8 @@ func Process(tr models.Transaction) error {
 		storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusSuccess)
 	}
 
+	storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusSuccess)
+
 	return nil
 }
 
