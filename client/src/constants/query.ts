@@ -1,0 +1,1 @@
+export const BALANCE_REFETCH_INTERVAL = 5_000
