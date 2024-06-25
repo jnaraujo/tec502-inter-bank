@@ -7,7 +7,7 @@ export function TransactionListBox() {
   const { data: transactions } = useTransactions(user?.id)
 
   return (
-    <article className="flex flex-col justify-between space-y-4 overflow-auto rounded-lg border bg-background p-6">
+    <article className="flex flex-col space-y-4 overflow-auto rounded-lg border bg-background p-6">
       <h2 className="text-xl font-medium text-zinc-800">Suas transações</h2>
 
       <div className="flex flex-col gap-6 overflow-auto py-2">
@@ -20,6 +20,7 @@ export function TransactionListBox() {
               amount: Number(op.amount),
               from: op.from,
               to: op.to,
+              type: op.type,
             }))}
           />
         ))}

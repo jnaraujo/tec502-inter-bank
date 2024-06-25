@@ -1,5 +1,11 @@
 import { cn } from "@/lib/utils"
-import { ArrowRight, CircleCheckBig, CircleDashed, CircleX } from "lucide-react"
+import {
+  ArrowRight,
+  CircleCheckBig,
+  CircleDashed,
+  CircleX,
+  DollarSign,
+} from "lucide-react"
 
 type TransactionStatus = "success" | "pending" | "failed"
 
@@ -7,6 +13,7 @@ interface Operation {
   amount: number
   from: string
   to: string
+  type: string
 }
 
 interface Props {
@@ -57,6 +64,13 @@ export function TransactionBox(props: Props) {
                 <span className="text-sm text-zinc-500">De: {op.from}</span>
                 <ArrowRight className="size-4 text-zinc-500" />
                 <span className="text-sm text-zinc-500">Para: {op.to}</span>
+                <div className="ml-2 flex items-center gap-1">
+                  <DollarSign className="size-4 text-zinc-500" />
+                  <span className="text-sm text-zinc-500">
+                    R$ {op.amount.toFixed(2)}
+                  </span>
+                </div>
+                <span className="text-sm text-zinc-400">({op.type})</span>
               </div>
             </div>
           ))}
