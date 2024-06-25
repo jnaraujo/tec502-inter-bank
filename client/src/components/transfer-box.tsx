@@ -1,9 +1,13 @@
+import { useAuth } from "@/contexts/auth-context"
+import { sendTransaction } from "@/services/payment-service"
 import { ArrowLeftRight, DollarSign, Plus, Trash } from "lucide-react"
 import { useState } from "react"
 import { CreateTransactionDialog, Operation } from "./create-transaction-dialog"
 import { Button } from "./ui/button"
+import { toast } from "./ui/use-toast"
 
 export function TransferBox() {
+  const { user } = useAuth()
   const [operations, setOperations] = useState<Array<Operation>>([])
   const [openDialog, setOpenDialog] = useState(false)
 
@@ -11,12 +15,48 @@ export function TransferBox() {
     setOperations((prev) => [operation, ...prev])
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-  }
-
   function removeOperation(idx: number) {
     setOperations((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!user) return
+
+    if (operations.length === 0) {
+      toast({
+        title: "Adicione uma operação.",
+        description:
+          "Você precisa de pelo meno uma operação para realizar a transferência.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      await sendTransaction({
+        author: user.ibk,
+        operations: operations.map((op) => ({
+          from: user.ibk,
+          to: op.to,
+          amount: op.amount,
+        })),
+      })
+
+      setOperations([])
+
+      toast({
+        title: "Transação criada com sucesso!",
+        description:
+          'Você pode acompanhar o status da transação pela caixa "Suas transações".',
+      })
+    } catch (error) {
+      toast({
+        title: "Erro ao criar a transação.",
+        description: (error as any).message,
+        variant: "destructive",
+      })
+    }
   }
 
   return (
