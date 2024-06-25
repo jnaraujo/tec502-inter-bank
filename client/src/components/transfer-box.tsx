@@ -1,5 +1,5 @@
 import { useAuth } from "@/contexts/auth-context"
-import { sendTransaction } from "@/services/payment-service"
+import { useSendTransaction } from "@/hooks/use-transactions"
 import { ArrowLeftRight, DollarSign, Plus, Trash } from "lucide-react"
 import { useState } from "react"
 import { CreateTransactionDialog, Operation } from "./create-transaction-dialog"
@@ -10,6 +10,7 @@ export function TransferBox() {
   const { user } = useAuth()
   const [operations, setOperations] = useState<Array<Operation>>([])
   const [openDialog, setOpenDialog] = useState(false)
+  const { mutate: sendTransaction } = useSendTransaction()
 
   function handleNewOperation(operation: Operation) {
     setOperations((prev) => [operation, ...prev])
@@ -33,30 +34,34 @@ export function TransferBox() {
       return
     }
 
-    try {
-      await sendTransaction({
+    sendTransaction(
+      {
         author: user.ibk,
         operations: operations.map((op) => ({
           from: user.ibk,
           to: op.to,
           amount: op.amount,
         })),
-      })
+      },
+      {
+        onSuccess: () => {
+          setOperations([])
 
-      setOperations([])
-
-      toast({
-        title: "Transação criada com sucesso!",
-        description:
-          'Você pode acompanhar o status da transação pela caixa "Suas transações".',
-      })
-    } catch (error) {
-      toast({
-        title: "Erro ao criar a transação.",
-        description: (error as any).message,
-        variant: "destructive",
-      })
-    }
+          toast({
+            title: "Transação criada com sucesso!",
+            description:
+              'Você pode acompanhar o status da transação pela caixa "Suas transações".',
+          })
+        },
+        onError: (error) => {
+          toast({
+            title: "Erro ao criar a transação.",
+            description: (error as any).message,
+            variant: "destructive",
+          })
+        },
+      },
+    )
   }
 
   return (
@@ -83,7 +88,10 @@ export function TransferBox() {
                 </p>
               ) : null}
               {operations.map((op, idx) => (
-                <div className="flex items-center gap-2 text-zinc-400">
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 text-zinc-400"
+                >
                   <div className="flex w-full items-center gap-2">
                     <div className="flex items-center gap-1">
                       <ArrowLeftRight className="size-4 text-zinc-600" />
@@ -111,7 +119,8 @@ export function TransferBox() {
             <Button
               className="mt-4 flex items-center gap-1"
               variant="secondary"
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault()
                 setOpenDialog(true)
               }}
             >

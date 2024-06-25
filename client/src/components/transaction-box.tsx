@@ -1,13 +1,5 @@
-import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
-import {
-  ArrowDownLeft,
-  ArrowRight,
-  ArrowUpRight,
-  CircleCheckBig,
-  CircleDashed,
-  CircleX,
-} from "lucide-react"
+import { ArrowRight, CircleCheckBig, CircleDashed, CircleX } from "lucide-react"
 
 type TransactionStatus = "success" | "pending" | "failed"
 
@@ -24,8 +16,6 @@ interface Props {
 }
 
 export function TransactionBox(props: Props) {
-  const { user } = useAuth()
-
   function getLabel() {
     switch (props.status) {
       case "success":
@@ -61,19 +51,13 @@ export function TransactionBox(props: Props) {
         </h3>
 
         <div>
-          {props.operations.map((op) => (
-            <div className="flex items-center space-x-1">
+          {props.operations.map((op, idx) => (
+            <div key={idx} className="flex items-center space-x-1">
               <div className="flex items-center gap-1">
                 <span className="text-sm text-zinc-500">De: {op.from}</span>
                 <ArrowRight className="size-4 text-zinc-500" />
                 <span className="text-sm text-zinc-500">Para: {op.to}</span>
               </div>
-
-              {op.from === user?.ibk ? (
-                <ArrowDownLeft className="size-4 text-zinc-500" />
-              ) : (
-                <ArrowUpRight className="size-4 text-zinc-500" />
-              )}
             </div>
           ))}
         </div>
