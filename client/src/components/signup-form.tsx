@@ -26,12 +26,13 @@ import { toast } from "./ui/use-toast"
 const formSchema = z.object({
   name: z
     .string()
-    .min(10, {
-      message: "O nome deve ter no mínimo 10 caracteres",
+    .min(8, {
+      message: "O nome deve ter no mínimo 6 caracteres",
     })
     .max(255, {
       message: "O nome deve ter no máximo 255 caracteres",
     }),
+  document: z.string().min(4).max(16),
 })
 
 export function SignUpForm() {
@@ -41,6 +42,7 @@ export function SignUpForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
+      document: "",
     },
   })
 
@@ -54,7 +56,7 @@ export function SignUpForm() {
       console.log(error)
       toast({
         title: "Erro ao criar conta",
-        description: "Ocorreu um erro ao criar sua conta. Tente novamente.",
+        description: (error as any).message,
         variant: "destructive",
       })
     }
@@ -79,6 +81,19 @@ export function SignUpForm() {
                   <FormLabel>Nome</FormLabel>
                   <FormControl>
                     <Input placeholder="Ex: John Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="document"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Documento</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: 123.456.789-99" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

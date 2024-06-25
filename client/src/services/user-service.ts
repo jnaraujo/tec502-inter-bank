@@ -1,8 +1,18 @@
 import { User } from "@/@types/user"
 import { env } from "@/env"
 
-export async function auth(id: string) {
-  const response = await fetch(`${env.VITE_BANK_URL}/api/accounts/${id}`)
+export async function auth(document: string) {
+  const response = await fetch(`${env.VITE_BANK_URL}/api/accounts/auth`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ document }),
+  })
+  if (response.status == 404) {
+    throw new Error("Usuário não encontrado")
+  }
+
   if (!response.ok) {
     throw new Error("Failed to fetch user")
   }
@@ -14,7 +24,8 @@ export async function auth(id: string) {
     balance: res.balance,
     createdAt: new Date(res.created_at),
     ibk: res.ibk,
-  } as User
+    document: res.document,
+  } satisfies User
 }
 
 interface CreateAccountUser {
@@ -29,6 +40,11 @@ export async function createAccount(user: CreateAccountUser) {
     },
     body: JSON.stringify(user),
   })
+
+  if (response.status == 409) {
+    throw new Error("Usuário já existe")
+  }
+
   if (!response.ok) {
     throw new Error("Failed to signup user")
   }
@@ -39,5 +55,6 @@ export async function createAccount(user: CreateAccountUser) {
     balance: res.balance,
     createdAt: new Date(res.created_at),
     ibk: res.ibk,
-  } as User
+    document: res.document,
+  } satisfies User
 }

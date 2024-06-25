@@ -1,0 +1,17 @@
+meta {
+  name: auth
+  type: http
+  seq: 11
+}
+
+post {
+  url: http://localhost:3001/api/accounts/auth
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "document": "000.000.000-01"
+  }
+}

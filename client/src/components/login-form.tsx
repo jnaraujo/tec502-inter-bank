@@ -24,8 +24,8 @@ import { Input } from "./ui/input"
 import { toast } from "./ui/use-toast"
 
 const formSchema = z.object({
-  userId: z.string().min(1, {
-    message: "O UserId deve ter no mínimo 1 caractere",
+  document: z.string().min(4, {
+    message: "O documento deve ter no mínimo 4 caracteres",
   }),
 })
 
@@ -35,7 +35,7 @@ export function LoginForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      userId: "",
+      document: "",
     },
   })
 
@@ -46,10 +46,9 @@ export function LoginForm() {
         to: "/dashboard",
       })
     } catch (error) {
-      console.log(error)
       toast({
-        title: "Erro ao criar conta",
-        description: "Ocorreu um erro ao criar sua conta. Tente novamente.",
+        title: "Erro ao entrar na conta",
+        description: (error as any).message,
         variant: "destructive",
       })
     }
@@ -68,12 +67,12 @@ export function LoginForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="userId"
+              name="document"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Id do usuário</FormLabel>
+                  <FormLabel>Seu Documento:</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: 10234" {...field} />
+                    <Input placeholder="Ex: 123.456.789-99" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

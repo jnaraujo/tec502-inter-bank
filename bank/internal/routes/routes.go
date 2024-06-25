@@ -28,6 +28,7 @@ func RegisterBankRoutes(app *fiber.App) {
 	router.Delete("/accounts/:id", bank.DeleteAccountRoute)
 	router.Get("/accounts/:id/transactions", bank.ListAccountTransactionsRoute)
 	router.Get("/accounts/:id/all", bank.FindAllAccountsRoute)
+	router.Post("/accounts/auth", bank.AuthRoute)
 
 	router.Post("/payments/deposit", bank.DepositRoute)
 	router.Post("/payments/pay", bank.PayRoute)
