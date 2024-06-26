@@ -17,6 +17,7 @@ export function TransferBox() {
   const [operations, setOperations] = useState<Array<Operation>>([])
   const [openDialog, setOpenDialog] = useState(false)
   const { mutate: sendTransaction } = useSendTransaction()
+  const [errors, setErrors] = useState<string[]>([])
 
   function handleNewOperation(operation: Operation) {
     setOperations((prev) => [...prev, operation])
@@ -30,13 +31,13 @@ export function TransferBox() {
     event.preventDefault()
     if (!user) return
 
+    setErrors([])
+
     if (operations.length === 0) {
-      toast({
-        title: "Adicione uma operação.",
-        description:
-          "Você precisa de pelo meno uma operação para realizar a transferência.",
-        variant: "destructive",
-      })
+      setErrors((prev) => [
+        ...prev,
+        "Você precisa de pelo menos uma operação para realizar a transferência.",
+      ])
       return
     }
 
@@ -59,12 +60,11 @@ export function TransferBox() {
               'Você pode acompanhar o status da transação pela caixa "Suas transações".',
           })
         },
-        onError: (error) => {
-          toast({
-            title: "Erro ao criar a transação.",
-            description: (error as any).message,
-            variant: "destructive",
-          })
+        onError: () => {
+          setErrors((prev) => [
+            ...prev,
+            "Erro ao criar a transação. Tente novamente mais tarde.",
+          ])
         },
       },
     )
@@ -135,6 +135,16 @@ export function TransferBox() {
               <Plus /> Adicionar nova Operação
             </Button>
           </div>
+
+          {errors.length !== 0 && (
+            <div>
+              {errors.map((error) => (
+                <div key={error} className="text-sm text-red-500">
+                  {error}
+                </div>
+              ))}
+            </div>
+          )}
 
           <Button type="submit">Realizar transferência</Button>
         </form>
