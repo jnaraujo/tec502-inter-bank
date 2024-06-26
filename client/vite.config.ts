@@ -1,6 +1,5 @@
 import path from "path"
 import { TanStackRouterVite } from "@tanstack/router-vite-plugin"
-import legacy from "@vitejs/plugin-legacy"
 import react from "@vitejs/plugin-react-swc"
 import Unfonts from "unplugin-fonts/vite"
 import { defineConfig } from "vite"
@@ -20,11 +19,6 @@ export default defineConfig({
           },
         ],
       },
-    }),
-    legacy({
-      targets: ["ie >= 11"],
-      renderLegacyChunks: true,
-      modernPolyfills: true,
     }),
     TanStackRouterVite(),
   ],
