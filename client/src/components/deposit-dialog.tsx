@@ -5,6 +5,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { handleZodError } from "@/lib/zod"
+import { createDepositFormSchema } from "@/schemas/create-deposit"
+import { useState } from "react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
@@ -16,12 +19,22 @@ interface Props {
 }
 
 export function DepositDialog(props: Props) {
+  const [errors, setErrors] = useState<string[]>([])
+
   function handleSendCommand(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-
     const formData = new FormData(event.currentTarget)
-    props.onSubmit(Number(formData.get("amount")))
-    props.onOpenChange(false)
+
+    try {
+      const data = createDepositFormSchema.parse({
+        amount: formData.get("amount"),
+      })
+
+      props.onSubmit(data.amount)
+      props.onOpenChange(false)
+    } catch (error: any) {
+      setErrors(handleZodError(error))
+    }
   }
 
   return (
@@ -47,6 +60,17 @@ export function DepositDialog(props: Props) {
                 required
               />
             </div>
+
+            {errors.length > 0 && (
+              <div className="space-y-1">
+                {errors.map((error, idx) => (
+                  <p key={idx} className="text-sm text-red-500">
+                    {error}
+                  </p>
+                ))}
+              </div>
+            )}
+
             <Button type="submit">Fazer depósito</Button>
           </form>
         </div>
