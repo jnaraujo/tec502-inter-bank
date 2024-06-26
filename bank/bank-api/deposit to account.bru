@@ -5,14 +5,14 @@ meta {
 }
 
 post {
-  url: http://localhost:3001/api/payments/deposit
+  url: http://localhost:3002/api/payments/deposit
   body: json
   auth: none
 }
 
 body:json {
   {
-    "user_id": 1,
+    "user_ibk": "1-1",
     "amount": 100
   }
 }
