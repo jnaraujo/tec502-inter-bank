@@ -1,6 +1,6 @@
 import { BALANCE_REFETCH_INTERVAL } from "@/constants/query"
 import { env } from "@/env"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 export function useBalance(userId?: number) {
   return useQuery({
@@ -29,5 +29,50 @@ export function useBalance(userId?: number) {
     },
     refetchInterval: BALANCE_REFETCH_INTERVAL,
     queryKey: ["balance", userId],
+  })
+}
+
+interface DepositData {
+  amount: number
+  userId: number
+}
+
+export function useDeposit() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: DepositData) => {
+      const response = await fetch(
+        `${env.VITE_BANK_URL}/api/payments/deposit`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: data.userId,
+            amount: data.amount,
+          }),
+        },
+      )
+
+      if (!response.ok) {
+        throw new Error(
+          (await response.json()).message || "Erro ao realizar a transação.",
+        )
+      }
+
+      const res = await response.json()
+      return {
+        message: res.message,
+      } satisfies {
+        message: string
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["balance", "transactions"],
+      })
+    },
   })
 }
