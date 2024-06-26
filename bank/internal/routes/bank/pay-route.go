@@ -2,10 +2,12 @@ package bank
 
 import (
 	"net/http"
+	"slices"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/models"
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/services"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/validate"
 	"github.com/shopspring/decimal"
@@ -28,9 +30,18 @@ func PayRoute(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
 	}
 
+	author := storage.Accounts.FindUserByIbk(body.Author)
+	userAccounts := services.FindAllUserAccountsInterBank(author.Document)
+
 	var operations []models.Operation
 	for _, op := range body.Operations {
-		// TODO: verificar se as operações são do mesmo usuário
+		if !slices.ContainsFunc(userAccounts, func(acc models.Account) bool {
+			return acc.InterBankKey == body.Author
+		}) {
+			return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
+				"message": "As operações precisam ser do mesmo usuário.",
+			})
+		}
 
 		if op.From == op.To {
 			return c.Status(http.StatusBadRequest).JSON(&fiber.Map{

@@ -74,6 +74,18 @@ func (as *accountsStorage) FindUserByDocument(document string) (models.Account, 
 	return models.Account{}, false
 }
 
+func (as *accountsStorage) FindUserByIbk(ibk interbank.IBK) *models.Account {
+	as.mu.RLock()
+	defer as.mu.RUnlock()
+
+	for _, user := range as.data {
+		if user.InterBankKey == ibk {
+			return &user
+		}
+	}
+	return nil
+}
+
 func (as *accountsStorage) AddToUserBalance(userId int, amount decimal.Decimal) (models.Account, bool) {
 	as.mu.Lock()
 	defer as.mu.Unlock()

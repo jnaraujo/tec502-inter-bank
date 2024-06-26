@@ -5,11 +5,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useAuth } from "@/contexts/auth-context"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 
 export interface Operation {
+  from: string
   to: string
   amount: number
 }
@@ -21,11 +23,13 @@ interface Props {
 }
 
 export function CreateTransactionDialog(props: Props) {
+  const { user } = useAuth()
   function handleSendCommand(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const formData = new FormData(event.currentTarget)
     props.onOperationCreated({
+      from: formData.get("from") as string,
       to: formData.get("to") as string,
       amount: Number(formData.get("amount")),
     })
@@ -45,6 +49,17 @@ export function CreateTransactionDialog(props: Props) {
         </DialogHeader>
         <div>
           <form className="space-y-4" onSubmit={handleSendCommand}>
+            <div className="space-y-1">
+              <Label htmlFor="from">IBK do remetente:</Label>
+              <Input
+                id="from"
+                name="from"
+                placeholder="Ex: 1-203"
+                required
+                defaultValue={user?.ibk}
+              />
+            </div>
+
             <div className="space-y-1">
               <Label htmlFor="to">IBK do beneficiário:</Label>
               <Input id="to" name="to" placeholder="Ex: 1-203" required />

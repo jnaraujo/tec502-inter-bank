@@ -1,6 +1,12 @@
 import { useAuth } from "@/contexts/auth-context"
 import { useSendTransaction } from "@/hooks/use-transactions"
-import { ArrowLeftRight, DollarSign, Plus, Trash } from "lucide-react"
+import {
+  ArrowLeftRight,
+  ArrowRight,
+  DollarSign,
+  Plus,
+  Trash,
+} from "lucide-react"
 import { useState } from "react"
 import { CreateTransactionDialog, Operation } from "./create-transaction-dialog"
 import { Button } from "./ui/button"
@@ -13,7 +19,7 @@ export function TransferBox() {
   const { mutate: sendTransaction } = useSendTransaction()
 
   function handleNewOperation(operation: Operation) {
-    setOperations((prev) => [operation, ...prev])
+    setOperations((prev) => [...prev, operation])
   }
 
   function removeOperation(idx: number) {
@@ -38,7 +44,7 @@ export function TransferBox() {
       {
         author: user.ibk,
         operations: operations.map((op) => ({
-          from: user.ibk,
+          from: op.from,
           to: op.to,
           amount: op.amount,
         })),
@@ -95,9 +101,11 @@ export function TransferBox() {
                   <div className="flex w-full items-center gap-2">
                     <div className="flex items-center gap-1">
                       <ArrowLeftRight className="size-4 text-zinc-600" />
-                      <span className="min-w-20 text-zinc-500">
-                        Para: {op.to}
-                      </span>
+                      <div className="flex min-w-20 items-center gap-1">
+                        <span className="text-zinc-600">{op.from}</span>
+                        <ArrowRight className="size-4 text-zinc-400" />
+                        <span className="text-zinc-600">{op.to}</span>
+                      </div>
                     </div>
                     <div className="flex items-center gap-1">
                       <DollarSign className="size-4 text-green-600" />
