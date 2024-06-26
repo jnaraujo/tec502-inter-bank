@@ -6,6 +6,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/auth-context"
+import { handleZodError } from "@/lib/zod"
+import { createOperationFormSchema } from "@/schemas/create-operation"
+import { useState } from "react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
@@ -22,19 +25,27 @@ interface Props {
   onOperationCreated: (operation: Operation) => void
 }
 
-export function CreateTransactionDialog(props: Props) {
+export function CreateOperationDialog(props: Props) {
   const { user } = useAuth()
+  const [errors, setErrors] = useState<string[]>([])
+
   function handleSendCommand(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const formData = new FormData(event.currentTarget)
-    props.onOperationCreated({
-      from: formData.get("from") as string,
-      to: formData.get("to") as string,
-      amount: Number(formData.get("amount")),
-    })
 
-    props.onOpenChange(false)
+    try {
+      const data = createOperationFormSchema.parse({
+        from: formData.get("from"),
+        to: formData.get("to"),
+        amount: formData.get("amount"),
+      })
+
+      props.onOperationCreated(data)
+      props.onOpenChange(false)
+    } catch (error: any) {
+      setErrors(handleZodError(error))
+    }
   }
 
   return (
@@ -50,7 +61,7 @@ export function CreateTransactionDialog(props: Props) {
         <div>
           <form className="space-y-4" onSubmit={handleSendCommand}>
             <div className="space-y-1">
-              <Label htmlFor="from">IBK do remetente:</Label>
+              <Label htmlFor="from">IBK do pagador:</Label>
               <Input
                 id="from"
                 name="from"
@@ -76,6 +87,16 @@ export function CreateTransactionDialog(props: Props) {
                 required
               />
             </div>
+
+            {errors.length !== 0 && (
+              <div>
+                {errors.map((error) => (
+                  <div key={error} className="text-sm text-red-500">
+                    {error}
+                  </div>
+                ))}
+              </div>
+            )}
             <Button type="submit">Adicionar operação</Button>
           </form>
         </div>

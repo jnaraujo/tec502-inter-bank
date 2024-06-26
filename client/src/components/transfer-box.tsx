@@ -8,7 +8,7 @@ import {
   Trash,
 } from "lucide-react"
 import { useState } from "react"
-import { CreateTransactionDialog, Operation } from "./create-transaction-dialog"
+import { CreateOperationDialog, Operation } from "./create-operation-dialog"
 import { Button } from "./ui/button"
 import { toast } from "./ui/use-toast"
 
@@ -140,7 +140,7 @@ export function TransferBox() {
         </form>
       </article>
 
-      <CreateTransactionDialog
+      <CreateOperationDialog
         open={openDialog}
         onOpenChange={setOpenDialog}
         onOperationCreated={handleNewOperation}
