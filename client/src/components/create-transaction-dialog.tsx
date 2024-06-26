@@ -56,7 +56,8 @@ export function CreateTransactionDialog(props: Props) {
                 name="amount"
                 placeholder="Ex: 500"
                 type="number"
-                step={0.1}
+                step={0.01}
+                min={0}
                 required
               />
             </div>
