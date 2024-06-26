@@ -5,12 +5,13 @@ import Cookies from "js-cookie"
 import React, { createContext, useContext, useEffect, useState } from "react"
 
 interface ILogin {
-  document: string
+  ibk: string
 }
 
 interface ISignUp {
   name: string
-  document: string
+  documents: string[]
+  type: "individual" | "legal" | "joint"
 }
 
 interface IAuthContext {
@@ -39,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAuthenticated = !!user
 
   async function login(data: ILogin) {
-    const res = await auth(data.document)
+    const res = await auth(data.ibk)
     Cookies.set("user", JSON.stringify(res))
     setUser(res)
   }

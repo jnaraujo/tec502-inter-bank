@@ -17,7 +17,7 @@ export function BalanceBox() {
     deposit(
       {
         amount,
-        userId: user.id,
+        userIBK: user.ibk,
       },
       {
         onSuccess: () => {

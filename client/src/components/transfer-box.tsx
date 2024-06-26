@@ -60,10 +60,10 @@ export function TransferBox() {
               'Você pode acompanhar o status da transação pela caixa "Suas transações".',
           })
         },
-        onError: () => {
+        onError: (error) => {
           setErrors((prev) => [
             ...prev,
-            "Erro ao criar a transação. Tente novamente mais tarde.",
+            error.message || "Erro ao criar a transação.",
           ])
         },
       },

@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-const IBK_REGEX = /^\d+-\d+$/
+export const IBK_REGEX = /^\d+-\d+$/
 export const createOperationFormSchema = z
   .object({
     from: z.string().regex(IBK_REGEX, {

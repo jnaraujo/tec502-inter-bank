@@ -5,4 +5,5 @@ export interface User {
   balance: string
   createdAt: Date
   ibk: string
+  type: "individual" | "legal" | "joint"
 }

@@ -48,7 +48,11 @@ export function SignUpForm() {
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
     try {
-      await auth.signUp(data)
+      await auth.signUp({
+        name: data.name,
+        type: "individual",
+        documents: [data.document],
+      })
       router.navigate({
         to: "/dashboard",
       })

@@ -1,6 +1,7 @@
 package bank
 
 import (
+	"fmt"
 	"net/http"
 	"slices"
 
@@ -30,22 +31,36 @@ func PayRoute(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
 	}
 
-	author := storage.Accounts.FindUserByIbk(body.Author)
+	author := storage.Accounts.FindAccountByIBK(body.Author)
 	if author == nil {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
 			"message": "Author not found",
 		})
 	}
 
-	userAccounts := services.FindAllUserAccountsInterBank(author.Document)
+	// Um usuário pessoa física ou jurídica só pode fazer transferências com suas próprias contas
+	// Uma conta conjunta só pode fazer transferências com a própria conta
+	var userAccounts []models.Account
+	if author.Type != models.AccountTypeJoint {
+		userAccounts = services.FindAllUserAccountsInterBank(author.Documents[0])
+	} else {
+		userAccounts = []models.Account{*author}
+	}
 
 	var operations []models.Operation
 	for _, op := range body.Operations {
+		fromAcc := services.FindAccountInterBank(op.From)
+		if fromAcc == nil {
+			return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
+				"message": fmt.Sprintf("Conta de origem %s não encontrada", op.From),
+			})
+		}
+
 		if !slices.ContainsFunc(userAccounts, func(acc models.Account) bool {
-			return acc.InterBankKey == body.Author
+			return slices.Contains(fromAcc.Documents, acc.Documents[0])
 		}) {
 			return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
-				"message": "As operações precisam ser do mesmo usuário.",
+				"message": "As operações precisam ser da mesma conta.",
 			})
 		}
 

@@ -33,8 +33,8 @@ export function useBalance(userId?: number) {
 }
 
 interface DepositData {
+  userIBK: string
   amount: number
-  userId: number
 }
 
 export function useDeposit() {
@@ -50,7 +50,7 @@ export function useDeposit() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_id: data.userId,
+            user_ibk: data.userIBK,
             amount: data.amount,
           }),
         },

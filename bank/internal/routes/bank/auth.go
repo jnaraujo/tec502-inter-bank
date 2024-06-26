@@ -4,12 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/validate"
 )
 
 type authBodySchema struct {
-	Document string `json:"document" validate:"required,lte=255"`
+	IBK interbank.IBK `json:"user_ibk" validate:"required"`
 }
 
 func AuthRoute(c *fiber.Ctx) error {
@@ -18,12 +19,12 @@ func AuthRoute(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
 	}
 
-	user, exists := storage.Accounts.FindUserByDocument(body.Document)
-	if !exists {
+	acc := storage.Accounts.FindAccountByIBK(body.IBK)
+	if acc == nil {
 		return c.Status(http.StatusNotFound).JSON(&fiber.Map{
-			"error": "user does not exists",
+			"error": "Conta não encontrada",
 		})
 	}
 
-	return c.Status(http.StatusCreated).JSON(&user)
+	return c.Status(http.StatusCreated).JSON(acc)
 }

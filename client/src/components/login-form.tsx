@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/auth-context"
+import { IBK_REGEX } from "@/schemas/create-operation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Link, useRouter } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
@@ -24,8 +25,8 @@ import { Input } from "./ui/input"
 import { toast } from "./ui/use-toast"
 
 const formSchema = z.object({
-  document: z.string().min(4, {
-    message: "O documento deve ter no mínimo 4 caracteres",
+  ibk: z.string().regex(IBK_REGEX, {
+    message: "O formado do IBK do pagador é inválido.",
   }),
 })
 
@@ -35,7 +36,7 @@ export function LoginForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      document: "",
+      ibk: "",
     },
   })
 
@@ -67,12 +68,12 @@ export function LoginForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="document"
+              name="ibk"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Seu Documento:</FormLabel>
+                  <FormLabel>Seu IBK:</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: 123.456.789-99" {...field} />
+                    <Input placeholder="Ex: 1-23" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

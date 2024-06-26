@@ -21,7 +21,7 @@ func AddCreditRoute(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
 	}
 
-	_, ok := storage.Accounts.AddToUserBalance(int(body.To.UserId), body.Amount)
+	_, ok := storage.Accounts.AddToAccountBalance(int(body.To.UserId), body.Amount)
 	if !ok {
 		return c.Status(http.StatusNotFound).JSON(&fiber.Map{
 			"message": "User not found.",

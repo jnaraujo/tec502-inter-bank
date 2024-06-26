@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -24,7 +25,7 @@ var Accounts = &accountsStorage{
 
 var accCounter atomic.Int64
 
-func (as *accountsStorage) CreateAccount(name, document string) models.Account {
+func (as *accountsStorage) CreateAccount(name, document string, accType models.AccountType) models.Account {
 	as.mu.Lock()
 	defer as.mu.Unlock()
 
@@ -32,7 +33,8 @@ func (as *accountsStorage) CreateAccount(name, document string) models.Account {
 	user := models.Account{
 		Id:        int(id),
 		Name:      name,
-		Document:  document,
+		Documents: []string{document},
+		Type:      accType,
 		CreatedAt: time.Now(),
 		Balance:   decimal.NewFromInt(0),
 	}
@@ -47,7 +49,31 @@ func (as *accountsStorage) CreateAccount(name, document string) models.Account {
 	return user
 }
 
-func (as *accountsStorage) FindUserById(id int) (models.Account, bool) {
+func (as *accountsStorage) CreateJointAccount(name string, document []string) models.Account {
+	as.mu.Lock()
+	defer as.mu.Unlock()
+
+	id := accCounter.Add(1)
+	user := models.Account{
+		Id:        int(id),
+		Name:      name,
+		Documents: document,
+		Type:      models.AccountTypeJoint,
+		CreatedAt: time.Now(),
+		Balance:   decimal.NewFromInt(0),
+	}
+
+	user.InterBankKey = interbank.IBK{
+		BankId: config.Env.BankId,
+		UserId: interbank.NewUserId(uint32(user.Id)),
+	}
+
+	as.data[user.Id] = user
+
+	return user
+}
+
+func (as *accountsStorage) FindAccountById(id int) (models.Account, bool) {
 	as.mu.RLock()
 	defer as.mu.RUnlock()
 
@@ -67,14 +93,53 @@ func (as *accountsStorage) FindUserByDocument(document string) (models.Account, 
 	defer as.mu.RUnlock()
 
 	for _, user := range as.data {
-		if user.Document == document {
+		if slices.Contains(user.Documents, document) {
 			return user, true
 		}
 	}
 	return models.Account{}, false
 }
 
-func (as *accountsStorage) FindUserByIbk(ibk interbank.IBK) *models.Account {
+// Busca todas as contas não conjuntas associadas a um documento
+func (as *accountsStorage) FindAccountByDocument(document string) (models.Account, bool) {
+	as.mu.RLock()
+	defer as.mu.RUnlock()
+
+	for _, acc := range as.data {
+		if acc.Type != models.AccountTypeJoint && acc.Documents[0] == document {
+			return acc, true
+		}
+	}
+	return models.Account{}, false
+}
+
+// Busca todas as contas associadas a um documento (incluindo contas conjuntas)
+func (as *accountsStorage) FindAllAccountsByDocument(document string) []models.Account {
+	as.mu.RLock()
+	defer as.mu.RUnlock()
+
+	accounts := []models.Account{}
+	for _, acc := range as.data {
+		if slices.Contains(acc.Documents, document) {
+			accounts = append(accounts, acc)
+		}
+	}
+	return accounts
+}
+
+func (as *accountsStorage) FindIndividualAccountByDocument(document string) (models.Account, bool) {
+	as.mu.RLock()
+	defer as.mu.RUnlock()
+
+	for _, acc := range as.data {
+		if acc.Type == models.AccountTypeIndividual && acc.Documents[0] == document {
+			return acc, true
+		}
+	}
+	return models.Account{}, false
+}
+
+func (as *accountsStorage) FindAccountByIBK(ibk interbank.IBK) *models.Account {
 	as.mu.RLock()
 	defer as.mu.RUnlock()
 
@@ -86,36 +151,36 @@ func (as *accountsStorage) FindUserByIbk(ibk interbank.IBK) *models.Account {
 	return nil
 }
 
-func (as *accountsStorage) AddToUserBalance(userId int, amount decimal.Decimal) (models.Account, bool) {
+func (as *accountsStorage) AddToAccountBalance(accId int, amount decimal.Decimal) (*models.Account, bool) {
 	as.mu.Lock()
 	defer as.mu.Unlock()
 
-	user, ok := as.data[userId]
+	acc, ok := as.data[accId]
 	if !ok {
-		return models.Account{}, ok
+		return nil, ok
 	}
 
-	user.Balance = user.Balance.Add(amount)
-	as.data[userId] = user
+	acc.Balance = acc.Balance.Add(amount)
+	as.data[accId] = acc
 
-	return user, ok
+	return &acc, ok
 }
 
-func (as *accountsStorage) SubFromUserBalance(userId int, amount decimal.Decimal) error {
+func (as *accountsStorage) SubFromAccountBalance(accId int, amount decimal.Decimal) error {
 	as.mu.Lock()
 	defer as.mu.Unlock()
 
-	user, ok := as.data[userId]
+	acc, ok := as.data[accId]
 	if !ok {
-		return errors.New("user not found")
+		return errors.New("conta não encontrada")
 	}
 
-	if user.Balance.LessThan(amount) {
-		return errors.New("insufficient funds")
+	if acc.Balance.LessThan(amount) {
+		return errors.New("saldo insuficiente")
 	}
 
-	user.Balance = user.Balance.Sub(amount)
-	as.data[userId] = user
+	acc.Balance = acc.Balance.Sub(amount)
+	as.data[accId] = acc
 
 	return nil
 }
