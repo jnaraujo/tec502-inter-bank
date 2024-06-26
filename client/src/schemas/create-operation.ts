@@ -14,7 +14,7 @@ export const createOperationFormSchema = z
         message: "O valor deve ser um número.",
       })
       .min(0.1, {
-        message: "O valor deve ser um maior que R$ 0.10",
+        message: "O valor deve ser maior que R$ 0.10",
       }),
   })
   .refine((data) => data.from !== data.to, {
