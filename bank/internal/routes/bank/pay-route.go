@@ -31,6 +31,12 @@ func PayRoute(c *fiber.Ctx) error {
 	}
 
 	author := storage.Accounts.FindUserByIbk(body.Author)
+	if author == nil {
+		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
+			"message": "Author not found",
+		})
+	}
+
 	userAccounts := services.FindAllUserAccountsInterBank(author.Document)
 
 	var operations []models.Operation
