@@ -8,6 +8,15 @@ services:
       - iot-network
     ports:
       - "3000:3000"
+  bank:
+    build: ./bank
+    environment:
+      - SERVER_PORT=3001
+      - BANK_ID=1
+    networks:
+      - iot-network
+    ports:
+      - "3001:3001"
 
 networks:
   iot-network:
