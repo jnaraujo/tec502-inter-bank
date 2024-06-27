@@ -12,7 +12,7 @@ import (
 )
 
 type depositBodySchema struct {
-	IBK    interbank.IBK   `json:"user_ibk" validate:"required"`
+	IBK    interbank.IBK   `json:"acc_ibk" validate:"required"`
 	Amount decimal.Decimal `json:"amount" validate:"required"`
 }
 

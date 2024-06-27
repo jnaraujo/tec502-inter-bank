@@ -7,7 +7,7 @@ export async function auth(ibk: string) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ user_ibk: ibk }),
+    body: JSON.stringify({ acc_ibk: ibk }),
   })
   if (response.status == 404) {
     throw new Error("Usuário não encontrado")

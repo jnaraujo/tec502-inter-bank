@@ -67,8 +67,8 @@ export function useSendTransaction() {
         body: JSON.stringify({
           author: transaction.author,
           operations: transaction.operations.map((op) => ({
-            from_user_ibk: op.from,
-            to_user_ibk: op.to,
+            from_acc_ibk: op.from,
+            to_acc_ibk: op.to,
             amount: op.amount,
           })),
         }),

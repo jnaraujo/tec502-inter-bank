@@ -10,7 +10,7 @@ import (
 )
 
 type authBodySchema struct {
-	IBK interbank.IBK `json:"user_ibk" validate:"required"`
+	IBK interbank.IBK `json:"acc_ibk" validate:"required"`
 }
 
 func AuthRoute(c *fiber.Ctx) error {

@@ -15,8 +15,8 @@ import (
 )
 
 type operationSchema struct {
-	From   interbank.IBK   `json:"from_user_ibk" validate:"required"`
-	To     interbank.IBK   `json:"to_user_ibk" validate:"required"`
+	From   interbank.IBK   `json:"from_acc_ibk" validate:"required"`
+	To     interbank.IBK   `json:"to_acc_ibk" validate:"required"`
 	Amount decimal.Decimal `json:"amount" validate:"required"`
 }
 

@@ -50,7 +50,7 @@ export function useDeposit() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_ibk: data.userIBK,
+            acc_ibk: data.userIBK,
             amount: data.amount,
           }),
         },
