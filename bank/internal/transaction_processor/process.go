@@ -1,4 +1,4 @@
-package ibt
+package transaction_processor
 
 import (
 	"bytes"
@@ -21,19 +21,19 @@ const (
 	operationTimeout   = 1 * time.Second
 )
 
-func Process(tr models.Transaction) error {
+func processTransaction(tr models.Transaction) error {
 	for _, op := range tr.Operations {
-		err := SubCredit(int(op.From.BankId), op.From, op.Amount)
+		err := subCredit(int(op.From.BankId), op.From, op.Amount)
 		if err != nil {
-			RollbackOperations(tr)
+			rollbackOperations(tr)
 			return err
 		}
 
-		err = AddCredit(int(op.To.BankId), op.To, op.Amount)
+		err = addCredit(int(op.To.BankId), op.To, op.Amount)
 		if err != nil {
 			// como falou na segunda parte, reverte a primeira parte
-			AddCredit(int(op.From.BankId), op.From, op.Amount)
-			RollbackOperations(tr)
+			addCredit(int(op.From.BankId), op.From, op.Amount)
+			rollbackOperations(tr)
 			return err
 		}
 
@@ -45,12 +45,12 @@ func Process(tr models.Transaction) error {
 	return nil
 }
 
-func RollbackOperations(tr models.Transaction) {
+func rollbackOperations(tr models.Transaction) {
 	for _, op := range tr.Operations {
 		// so precisa reverter as que tiveram sucesso
 		if op.Status == models.OperationStatusSuccess {
-			SubCredit(int(op.To.BankId), op.To, op.Amount)
-			AddCredit(int(op.From.BankId), op.From, op.Amount)
+			subCredit(int(op.To.BankId), op.To, op.Amount)
+			addCredit(int(op.From.BankId), op.From, op.Amount)
 		}
 
 		storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusFailed)
@@ -59,7 +59,7 @@ func RollbackOperations(tr models.Transaction) {
 	storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusFailed)
 }
 
-func AddCredit(bankId int, to interbank.IBK, amount decimal.Decimal) error {
+func addCredit(bankId int, to interbank.IBK, amount decimal.Decimal) error {
 	client := http.Client{
 		Timeout: operationTimeout,
 	}
@@ -95,7 +95,7 @@ func AddCredit(bankId int, to interbank.IBK, amount decimal.Decimal) error {
 	return nil
 }
 
-func SubCredit(bankId int, from interbank.IBK, amount decimal.Decimal) error {
+func subCredit(bankId int, from interbank.IBK, amount decimal.Decimal) error {
 	client := http.Client{
 		Timeout: operationTimeout,
 	}

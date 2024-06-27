@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank/ibt"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/token_ring"
 )
@@ -15,14 +14,15 @@ func BackgroundJob() {
 			time.Sleep(1 * time.Second)
 			fmt.Println("Checking transactions...", storage.Token.HasToken())
 			if storage.Token.HasToken() {
-				Process()
+				// TODO: pergunta se tem realmente o token
+				processLocalTransactions()
 				token_ring.PassToken()
 			}
 		}
 	}()
 }
 
-func Process() {
+func processLocalTransactions() {
 	fmt.Println("Processing transactions")
 
 	// processa as transações
@@ -38,6 +38,6 @@ func Process() {
 			continue
 		}
 
-		ibt.Process(*tr)
+		processTransaction(*tr)
 	}
 }
