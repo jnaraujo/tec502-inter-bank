@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/config"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/constants"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/services"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
@@ -25,6 +26,19 @@ func BackgroundJob() {
 
 				processLocalTransactions()
 				services.PassToken() // passa o token para o próximo banco
+
+				continue
+			}
+
+			nextOwner := storage.Ring.Next(storage.Token.Get().Owner)
+			if nextOwner == nil {
+				continue
+			}
+
+			// se o próximo dono do token for o banco atual e o tempo de espera para o token interbancário for excedido
+			if nextOwner.Id == config.Env.BankId && time.Since(storage.Token.Get().Ts) > constants.MaxWaitTimeForTokenInterBank {
+				fmt.Println("Tempo de espera para token interbancário excedido. Solicitando token...")
+				services.BroadcastToken(config.Env.BankId) // faz um broadcast a todos os bancos avisando que o token agora é do banco atual
 			}
 		}
 	}()
