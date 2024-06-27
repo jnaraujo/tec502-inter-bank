@@ -74,7 +74,7 @@ func PassToken() {
 	nextBankId := findNextValidBank(nextBank.Id)
 	if nextBankId == nil {
 		fmt.Println("Não conseguiu passar o token para um banco valido. Mantém o token localmente.")
-		BroadcastToken(config.Env.BankId)
+		BroadcastToken(config.Env.BankId) // faz o broadcast do token para os outros bancos - para garantir que o token não se perca
 		return
 	}
 
