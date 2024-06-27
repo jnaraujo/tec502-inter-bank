@@ -3,5 +3,6 @@ package constants
 import "time"
 
 const (
-	OperationTimeout = 1 * time.Second // Tempo máximo que o banco espera por uma resposta de outro banco para uma operação
+	OperationTimeout                  = 1 * time.Second  // Tempo máximo que o banco espera por uma resposta de outro banco para uma operação
+	MaxTimeToProcessLocalTransactions = 10 * time.Second // Tempo máximo que o banco tem para processar transações locais
 )

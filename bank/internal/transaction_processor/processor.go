@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/constants"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/services"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
 )
@@ -35,7 +36,14 @@ func processLocalTransactions() {
 	// processa as transações
 	trIds := storage.TransactionQueue.List()
 	for _, id := range trIds {
-		fmt.Printf("Processing transaction %s\n", id)
+		if time.Since(storage.Token.Get().Ts) > constants.MaxTimeToProcessLocalTransactions {
+			fmt.Println("Tempo para processar transações locais excedido")
+			return
+		}
+		if !storage.Token.HasToken() {
+			fmt.Println("Token não é mais do banco")
+			return
+		}
 		// remove a transação da fila no final
 		defer storage.TransactionQueue.Remove(id)
 
