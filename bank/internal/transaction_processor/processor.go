@@ -11,12 +11,19 @@ import (
 func BackgroundJob() {
 	go func() {
 		for {
-			time.Sleep(1 * time.Second)
+			time.Sleep(1 * time.Second) // espera 1 segundo para verificar as transações
+
 			fmt.Println("Checking transactions...", storage.Token.HasToken())
 			if storage.Token.HasToken() {
-				// TODO: pergunta se tem realmente o token
+				bank := services.AskBankWithToken()
+				if bank != nil && bank.Owner != storage.Token.Get().Owner {
+					// O sistema tem o token, mas não é o dono
+					storage.Token.Set(*bank)
+					continue
+				}
+
 				processLocalTransactions()
-				services.PassToken()
+				services.PassToken() // passa o token para o próximo banco
 			}
 		}
 	}()
@@ -34,10 +41,8 @@ func processLocalTransactions() {
 
 		tr := storage.Transactions.FindTransactionById(id)
 		if tr == nil {
-			fmt.Printf("Transação %s não existe.\n", id)
 			continue
 		}
-
 		processTransaction(*tr)
 	}
 }
