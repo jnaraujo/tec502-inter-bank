@@ -3,7 +3,7 @@ package storage
 import (
 	"sync"
 
-	"github.com/jnaraujo/tec502-inter-bank/bank/internal/token_ring/token"
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/token"
 )
 
 type tokenStorage struct {

@@ -7,8 +7,8 @@ import (
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/config"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/http"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank"
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/services"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
-	"github.com/jnaraujo/tec502-inter-bank/bank/internal/token_ring"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/transaction_processor"
 )
 
@@ -46,13 +46,13 @@ func main() {
 	if storage.Ring.FindBankWithLowestId().Id == config.Env.BankId {
 		fmt.Println("I'm the bank with the lowest id")
 		// verifica se o token já esta na rede.
-		if !token_ring.IsTokenOnRing() {
+		if !services.IsTokenOnRing() {
 			// se não estiver, cria o token
-			token_ring.BroadcastToken(config.Env.BankId)
+			services.BroadcastToken(config.Env.BankId)
 		}
 	}
 
-	bank := token_ring.AskBankWithToken()
+	bank := services.AskBankWithToken()
 	if bank != nil && bank.Owner == config.Env.BankId {
 		storage.Token.Set(*bank)
 	}

@@ -1,4 +1,4 @@
-package token_ring
+package services
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/config"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
-	"github.com/jnaraujo/tec502-inter-bank/bank/internal/token_ring/token"
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/token"
 )
 
 // verifica se o token já esta na rede.

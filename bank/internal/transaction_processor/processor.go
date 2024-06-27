@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/services"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
-	"github.com/jnaraujo/tec502-inter-bank/bank/internal/token_ring"
 )
 
 func BackgroundJob() {
@@ -16,7 +16,7 @@ func BackgroundJob() {
 			if storage.Token.HasToken() {
 				// TODO: pergunta se tem realmente o token
 				processLocalTransactions()
-				token_ring.PassToken()
+				services.PassToken()
 			}
 		}
 	}()

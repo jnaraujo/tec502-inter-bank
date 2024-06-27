@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
-	"github.com/jnaraujo/tec502-inter-bank/bank/internal/token_ring/token"
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/token"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/validate"
 )
 
