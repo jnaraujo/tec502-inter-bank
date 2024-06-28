@@ -21,7 +21,7 @@ func AuthRoute(c *fiber.Ctx) error {
 
 	acc := storage.Accounts.FindAccountByIBK(body.IBK)
 	if acc == nil {
-		return c.Status(http.StatusNotFound).JSON(&fiber.Map{
+		return c.Status(http.StatusUnauthorized).JSON(&fiber.Map{
 			"error": "Conta não encontrada",
 		})
 	}
