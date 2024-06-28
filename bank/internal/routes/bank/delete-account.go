@@ -11,20 +11,20 @@ func DeleteAccountRoute(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
-			"message": "Invalid account id",
+			"message": "Id inválido",
 		})
 	}
 
 	_, exists := storage.Accounts.FindAccountById(id)
 	if !exists {
 		return c.Status(http.StatusNotFound).JSON(&fiber.Map{
-			"message": "user not found",
+			"message": "Conta não encontrada",
 		})
 	}
 
 	storage.Accounts.Delete(id)
 
 	return c.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "account deleted",
+		"message": "Conta deletada com sucesso",
 	})
 }

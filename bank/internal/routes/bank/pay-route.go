@@ -34,7 +34,7 @@ func PayRoute(c *fiber.Ctx) error {
 	author := storage.Accounts.FindAccountByIBK(body.Author)
 	if author == nil {
 		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
-			"message": "Author not found",
+			"message": "Conta de autor não encontrada",
 		})
 	}
 
@@ -60,19 +60,19 @@ func PayRoute(c *fiber.Ctx) error {
 			return slices.Contains(fromAcc.Documents, acc.Documents[0])
 		}) {
 			return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
-				"message": "As operações precisam ser da mesma conta.",
+				"message": "Usuário não pode fazer transferências com contas de terceiros",
 			})
 		}
 
 		if op.From == op.To {
 			return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
-				"message": "Sender and receiver must be different",
+				"message": "Conta de origem e destino não podem ser iguais",
 			})
 		}
 
 		if op.Amount.LessThanOrEqual(decimal.NewFromInt(0)) {
 			return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
-				"message": "Amount must be greater than 0",
+				"message": "Valor da operação deve ser maior que zero",
 			})
 		}
 
@@ -84,7 +84,7 @@ func PayRoute(c *fiber.Ctx) error {
 	storage.Transactions.Save(transaction)
 	storage.TransactionQueue.Add(transaction.Id)
 
-	return c.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "success",
+	return c.Status(http.StatusCreated).JSON(&fiber.Map{
+		"message": "Transação criada com sucesso",
 	})
 }
