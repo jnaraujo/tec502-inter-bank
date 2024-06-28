@@ -28,6 +28,6 @@ func SetToken(c *fiber.Ctx) error {
 	})
 
 	return c.Status(http.StatusOK).JSON(fiber.Map{
-		"message": "token set",
+		"message": "Token setado com sucesso",
 	})
 }

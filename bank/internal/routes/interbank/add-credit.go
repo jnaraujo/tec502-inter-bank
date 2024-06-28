@@ -24,11 +24,11 @@ func AddCreditRoute(c *fiber.Ctx) error {
 	_, ok := storage.Accounts.AddToAccountBalance(int(body.To.UserId), body.Amount)
 	if !ok {
 		return c.Status(http.StatusNotFound).JSON(&fiber.Map{
-			"message": "User not found.",
+			"message": "Conta não encontrada",
 		})
 	}
 
 	return c.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "Success",
+		"message": "OCrédito adicionado com sucesso",
 	})
 }

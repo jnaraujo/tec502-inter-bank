@@ -13,7 +13,7 @@ func FindAccountRoute(c *fiber.Ctx) error {
 	accounts := storage.Accounts.FindAllAccountsByDocument(document)
 	if len(accounts) == 0 {
 		return c.Status(http.StatusNotFound).JSON(&fiber.Map{
-			"message": "User does not exists",
+			"message": "Nenhuma conta encontrada",
 		})
 	}
 

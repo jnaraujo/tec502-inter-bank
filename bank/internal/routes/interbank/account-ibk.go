@@ -19,7 +19,7 @@ func FindAccountIBKRoute(c *fiber.Ctx) error {
 	acc := storage.Accounts.FindAccountByIBK(*ibk)
 	if acc == nil {
 		return c.Status(http.StatusNotFound).JSON(&fiber.Map{
-			"message": "User does not exists",
+			"message": "Conta não encontrada",
 		})
 	}
 
