@@ -145,3 +145,41 @@ func AddCreditToAccount(to interbank.IBK, amount decimal.Decimal) error {
 
 	return nil
 }
+
+func ProcessTransaction(tr models.Transaction) error {
+	for _, op := range tr.Operations {
+		err := SubCreditFromAccount(op.From, op.Amount)
+		if err != nil {
+			RollbackOperations(tr)
+			return err
+		}
+
+		err = AddCreditToAccount(op.To, op.Amount)
+		if err != nil {
+			// como falou na segunda parte, reverte a primeira parte
+			AddCreditToAccount(op.From, op.Amount)
+			RollbackOperations(tr)
+			return err
+		}
+
+		storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusSuccess)
+	}
+
+	storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusSuccess)
+
+	return nil
+}
+
+func RollbackOperations(tr models.Transaction) {
+	for _, op := range tr.Operations {
+		// so precisa reverter as que tiveram sucesso
+		if op.Status == models.OperationStatusSuccess {
+			SubCreditFromAccount(op.To, op.Amount)
+			AddCreditToAccount(op.From, op.Amount)
+		}
+
+		storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusFailed)
+	}
+
+	storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusFailed)
+}

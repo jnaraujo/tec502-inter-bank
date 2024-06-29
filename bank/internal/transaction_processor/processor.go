@@ -65,6 +65,6 @@ func processLocalTransactions() {
 		if tr == nil {
 			continue
 		}
-		processTransaction(*tr)
+		services.ProcessTransaction(*tr)
 	}
 }
