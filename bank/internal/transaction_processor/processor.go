@@ -13,7 +13,7 @@ import (
 func BackgroundJob() {
 	go func() {
 		for {
-			time.Sleep(1 * time.Second) // espera 1 segundo para verificar as transações
+			time.Sleep(500 * time.Millisecond) // espera para verificar as transações
 
 			fmt.Println("Checking transactions...", storage.Token.HasToken())
 			if storage.Token.HasToken() {
