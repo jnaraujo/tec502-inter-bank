@@ -29,6 +29,6 @@ func AddCreditRoute(c *fiber.Ctx) error {
 	}
 
 	return c.Status(http.StatusOK).JSON(&fiber.Map{
-		"message": "OCrédito adicionado com sucesso",
+		"message": "Crédito adicionado com sucesso",
 	})
 }
