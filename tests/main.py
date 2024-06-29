@@ -5,6 +5,10 @@ import utils
 def main():
   print("="*5, "Running Tests", "="*5)
   
+  
+  tests.multipleTransactions1()
+  tests.multipleTransactions2()
+  
   threads = []
   for i in range(10):
     addrs = utils.randomAddrs()
