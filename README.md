@@ -15,7 +15,6 @@ Como forma de criar uma solução descentralizada para pagamentos bancários, o 
 Neste contexto, o método de Token Ring foi escolhido como a solução para resolver o problema de concorrência entre os bancos participantes. Este método, amplamente utilizado em redes de computadores, garante que cada banco tenha a oportunidade de acessar e atualizar as informações das contas de forma ordenada e sem conflitos, prevenindo o "duplo gasto" e assegurando a consistência dos dados. Além disso, para o desenvolvimento do projeto, foram utilizadas tecnologias como Docker, ReactJS e Go.
 
 ## Sumário
-
 ## Sobre o projeto
 ### Tecnologias utilizadas
 - Geral
@@ -548,6 +547,74 @@ Exemplo de resposta:
 ```http
 200 OK
 ```
+
+## Sincronização dos dados internamente no banco
+Devido a natureza distribuída do sistema, leituras e escritas podem ocorrer de forma concorrente no banco. Por exemplo, dois usuário podem tentar realizar um depósito na mesma conta ao mesmo tempo, o que pode causar inconsistências nos dados.
+
+Para resolver o problema de concorrência interna, [foram utilizados](https://github.com/jnaraujo/tec502-inter-bank/blob/main/bank/internal/storage/transactions.go#L15) mecanismos de lock (mutexes) para garantir que apenas uma operações de escrita seja realizada por vez. Assim, antes que qualquer operação de leitura ou escrita no dados armazenados seja realizada, um lock é adquirido. Isso garante que as operações sejam realizadas de forma ordenada e sem conflitos.
+
+Por exemplo, na operação de depósito, o lock é adquirido antes de adicionar o valor na conta e liberado após a operação ser concluída. Isso garante, no caso abaixo, que apenas uma transação seja salva por vez.
+
+```go
+func (ts *transactionsStorage) Save(tr models.Transaction) {
+	ts.mu.Lock()
+	ts.data[tr.Id] = tr
+	ts.mu.Unlock()
+}
+```
+
+## Transações assíncronas
+Quando uma transação é criada em um banco, ela é adicionada na [fila interna](bank/internal/storage/transaction_queue.go) do banco. Essa fila é processada em background por um [serviço](bank/internal/transaction_processor/processor.go) que é responsável por processar as transações de forma assíncrona. O serviço verifica de tempos em tempos se o banco tem a posse do token e, caso tenha, processa a transação. Caso contrário, a transação é mantida na fila até que o banco possua o token. Desse modo, nenhuma transação é realizada até que o banco possua o token. Isso garante que as transações sejam realizadas de forma ordenada e sem conflitos.
+
+Assim que o token é adquirido, o banco começa o processamento das transações, uma de cada vez e na ordem em que foram adicionadas na file. Como cada transações possui N operações, o banco processa cada operação de forma atômica. Assim, caso uma operação falhe, a transação é marcada como falha e nenhuma operação é realizada.
+
+Todas as operações realizada no processamento das operações (como verificar se o usuário existe, adicionar fundos na conta, subtrair fundos da conta, etc) são realizados através do InterBank.
+
+## Concorrência distribuída e Token Ring
+Para garantir a consistência dos dados e evitar conflitos entre os bancos, foi utilizado o método de Token Ring. Este método, amplamente utilizado em redes de computadores, garante que cada banco tenha a oportunidade de acessar e atualizar as informações das contas de forma ordenada e sem conflitos, prevenindo o "duplo gasto" e assegurando a consistência dos dados.
+
+O Token Ring é composto por um token, que é passado de banco em banco, permitindo que cada banco tenha a oportunidade de acessar e atualizar as informações das contas. Quando um banco possui o token, ele pode realizar operações de leitura e escrita nos dados armazenados. Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele.
+
+Assim que incia o sistema, o banco com ID mais baixo é o responsável por criar o token e passá-lo para o próximo banco. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando o token chega no último banco, ele é passado de volta para o primeiro banco, fechando o anel. Esse processo é repetido indefinidamente, garantindo que cada banco tenha a oportunidade de acessar e atualizar as informações das contas.
+
+### Estrutura do Token
+O [token](bank/internal/token/token.go) é composto por um campo `owner`, que indica quem é o dono do token, e um campo `ts`, que indica a data e hora em que o token foi criado. 
+
+```go
+type Token struct {
+  Owner int interbank.BankId // ID do banco que é dono do token
+  Ts    time.Time          // Data e hora em que o token foi criado
+}
+```
+
+### Detecção e recuperação de falhas
+Um dos principais problemas da utilização do método de Token Ring é a possibilidade de falhas. Caso um banco que possua o token caia, o token é perdido e as transações não podem ser realizadas. Para resolver esse problema, foi implementado um mecanismo de detecção e recuperação de falhas.
+
+Por exemplo, quando o banco que detém termina de processar as transações, ele passa o token para o próximo banco. Caso o próximo banco não esteja disponível, ele tentará enviar para o próximo banco, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual.
+
+Para garantir que não ocorra duplicação de tokens, antes de iniciar o processamento das transações, o banco envia um multicast para todos os bancos do consórcio, perguntando quem é o dono do token. Caso o banco seja o dono do token, ele inicia o processamento das transações. Caso contrário, ele atualiza as informações internas sobre quem é o dono do token.
+
+Além disso, foi implementado um mecanismo de timeout para garantir que o token seja passado de banco em banco. Caso o banco que detém o token não passe o token para o próximo banco em um determinado tempo, o token é considerado perdido e o próximo banco assume a responsabilidade de criar um novo token e avisar a todos que ele é agora o novo detentor do token. Isso garante que o token continue circulando entre os bancos, mesmo em caso de falhas.
+
+### Estrutura do Token Ring
+O [Token Ring](bank/internal/storage/ring.go) é composto por um conjunto de bancos (nós) que se comunicam entre si para realizar transações financeiras de forma segura e eficiente. Cada banco possui um ID único, que é utilizado para determinar a ordem em que os bancos acessam e atualizam as informações das contas. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos.
+
+Todos os bancos do consórcio são definidos com antecedência e cada banco possui um ID único. O ID é utilizado para determinar a ordem em que os bancos acessam e atualizam as informações das contas. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos.
+
+```go
+type ringData struct {
+	Id   interbank.BankId
+	Addr string
+}
+
+// implementação de um token ring para
+// comunicação entre os bancos
+type ringStorage struct {
+	mu   sync.RWMutex
+	ring []ringData
+}
+```
+
 
 ### Protocolo de comunicação
 ### Token Ring
