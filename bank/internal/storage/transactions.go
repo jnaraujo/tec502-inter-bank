@@ -24,7 +24,7 @@ var Transactions = &transactionsStorage{
 func (ts *transactionsStorage) Save(tr models.Transaction) {
 	ts.mu.Lock()
 	ts.data[tr.Id] = tr
-	defer ts.mu.Unlock()
+	ts.mu.Unlock()
 }
 
 func (ts *transactionsStorage) CreateDepositTransaction(author interbank.IBK, amount decimal.Decimal) models.Transaction {
