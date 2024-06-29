@@ -35,6 +35,9 @@ func main() {
 
 	signal := make(chan bool)
 
+	// O servidor deve ser rodado antes do token ring
+	// pois é necessário acessar algumas rotas para
+	// configurar corretamente
 	go func() {
 		// run http server on background
 		err = http.NewServer(config.Env.ServerPort)
@@ -43,19 +46,8 @@ func main() {
 		}
 	}()
 
-	if storage.Ring.FindBankWithLowestId().Id == config.Env.BankId {
-		fmt.Println("I'm the bank with the lowest id")
-		// verifica se o token já esta na rede.
-		if !services.IsTokenOnRing() {
-			// se não estiver, cria o token
-			services.BroadcastToken(config.Env.BankId)
-		}
-	}
-
-	bank := services.AskBankWithToken()
-	if bank != nil && bank.Owner == config.Env.BankId {
-		storage.Token.Set(*bank)
-	}
+	// Inicia e configura o token ring
+	services.SetupTokenRing()
 
 	// inicia o processamento de transações em background
 	transaction_processor.BackgroundJob()

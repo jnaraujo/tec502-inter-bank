@@ -14,6 +14,22 @@ import (
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/token"
 )
 
+func SetupTokenRing() {
+	if storage.Ring.FindBankWithLowestId().Id == config.Env.BankId {
+		fmt.Println("I'm the bank with the lowest id")
+		// verifica se o token já esta na rede.
+		if !IsTokenOnRing() {
+			// se não estiver, cria o token
+			BroadcastToken(config.Env.BankId)
+		}
+	}
+
+	bank := AskBankWithToken()
+	if bank != nil && bank.Owner == config.Env.BankId {
+		storage.Token.Set(*bank)
+	}
+}
+
 // verifica se o token já esta na rede.
 func IsTokenOnRing() bool {
 	for _, node := range storage.Ring.List() {
