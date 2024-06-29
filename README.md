@@ -603,6 +603,7 @@ Para resolver o problema de concorrência interna, [foram utilizados](https://gi
 Por exemplo, na operação de depósito, o lock é adquirido antes de adicionar o valor na conta e liberado após a operação ser concluída. Isso garante, no caso abaixo, que apenas uma transação seja salva por vez.
 
 ```go
+// Código de bank/internal/storage/transactions.go
 func (ts *transactionsStorage) Save(tr models.Transaction) {
    ts.mu.Lock()
    ts.data[tr.Id] = tr
@@ -623,6 +624,8 @@ As transações no InterBank são atômicas, ou seja, elas são realizadas de fo
 Por exemplo, na operação de transferência, caso a conta de origem não tem saldo suficiente para realizar ou não exista, a função `SubCreditFromAccount` retorna um erro e chamada a função `rollbackOperations` que reverte todas as operações realizadas até o momento. Caso um operação de crédito falhe, a função `AddCreditToAccount` reverte a operação de débito realizada anteriormente, chamando a função `rollbackOperations` em seguida para reverter todas as operações realizadas até o momento.
 
 ```go
+// Código de bank/internal/services/inter_bank.go
+// processTransaction processa uma transação de forma atômica
 func processTransaction(tr models.Transaction) error {
    // processa cada operação da transação
    for _, op := range tr.Operations {
@@ -677,6 +680,7 @@ O [token](bank/internal/token/token.go)  é um objeto que é passado de banco em
 Assim que o banco detentor do token termina de processar as transações, ele atualiza o token com o ID do novo dono e com a hora atual. O token é então passado para o próximo banco, que por sua vez atualiza o token e passa para o próximo banco, e assim por diante. Esse processo é repetido indefinidamente, garantindo que cada banco tenha a oportunidade de acessar e atualizar as informações das contas.
 
 ```go
+// Código de bank/internal/token/token.go
 type Token struct {
    Owner int interbank.BankId // ID do banco que é dono do token
    Ts    time.Time          // Data e hora em que o token foi criado
@@ -689,6 +693,7 @@ O [Token Ring](bank/internal/storage/ring.go) é composto por um conjunto de ban
 Todos os bancos do consórcio são definidos com antecedência e cada banco possui um ID único. O ID é utilizado para determinar a ordem em que os bancos acessam e atualizam as informações das contas. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos.
 
 ```go
+// Código de bank/internal/storage/ring.go
 type ringData struct {
    Id   interbank.BankId
    Addr string
@@ -706,13 +711,14 @@ type ringStorage struct {
 Quando o sistema é iniciado, o banco com ID mais baixo é o responsável por criar o token e passá-lo para o próximo banco. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando o token chega no último banco, ele é passado de volta para o primeiro banco, fechando o anel. Esse processo é repetido indefinidamente, garantindo que cada banco tenha a oportunidade de acessar e atualizar as informações das contas de forma ordenada e sem conflitos. O código a seguir demonstra como o token é passado de banco em banco.
 
 ```go
-   // Se o banco atual é o banco com menor ID
-   if storage.Ring.FindBankWithLowestId().Id == config.Env.BankId {
-   // verifica se o token já esta na rede.
-   if !services.IsTokenOnRing() {
-      // se não estiver, cria o token
-      services.BroadcastToken(config.Env.BankId)
-   }
+// código de bank/internal/services/token_ring.go
+// Se o banco atual é o banco com menor ID
+if storage.Ring.FindBankWithLowestId().Id == config.Env.BankId {
+// verifica se o token já esta na rede.
+if !services.IsTokenOnRing() {
+   // se não estiver, cria o token
+   services.BroadcastToken(config.Env.BankId)
+}
 }
 ```
 
@@ -721,6 +727,7 @@ Quando um banco possui o token, ele pode realizar operações de leitura e escri
 
 O código abaixo demonstra como a passagem do token é realizada. O banco verifica se o próximo banco está disponível e, caso esteja, ele passa o token para ele. Caso contrário, ele tenta passar para o próximo banco, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual.
 ```go
+// código de bank/internal/transaction_processor/processor.go
 // Verifica se o banco possui o token (localmente)
 if storage.Token.HasToken() {
    // Em seguida, ele pergunta a rede quem é o dono do token
