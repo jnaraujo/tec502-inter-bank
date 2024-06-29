@@ -1,3 +1,4 @@
+import random
 
 def randomCpf():
   cpf = ""

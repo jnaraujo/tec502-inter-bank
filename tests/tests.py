@@ -1,4 +1,6 @@
 import utils
+import api
+import time
 
 def singleTransactionWithMultipleOperations(addrs=["localhost:3001", "localhost:3002"]):
   cpf_1_1 = utils.randomCpf()
