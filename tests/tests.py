@@ -1,12 +1,9 @@
-import api
-import time
-from threading import Thread
-import random
-  
-def executeTransactions(addrs=["localhost:3001", "localhost:3002"]):
-  cpf_1_1 = randomCpf()
-  cnpj_1_2 = randomCpf()
-  cpf_2_3 = randomCpf()
+import utils
+
+def singleTransactionWithMultipleOperations(addrs=["localhost:3001", "localhost:3002"]):
+  cpf_1_1 = utils.randomCpf()
+  cnpj_1_2 = utils.randomCpf()
+  cpf_2_3 = utils.randomCpf()
   
   acc_1_1 = api.createAccount("José da Silva", [cpf_1_1], "individual", addrs[0])
   acc_1_2 = api.createAccount("Pedro Souza", [cnpj_1_2], "legal", addrs[0])
@@ -70,22 +67,3 @@ def executeTransactions(addrs=["localhost:3001", "localhost:3002"]):
   api.deleteUser(acc_1_joint["id"], addrs[0])
   api.deleteUser(acc_2_1["id"], addrs[1])
   api.deleteUser(acc_2_3["id"], addrs[1])
-  
-def randomCpf():
-  cpf = ""
-  for i in range(11):
-    cpf += str(random.randint(0, 9))
-  return cpf
-
-def randomAddrs():
-  addrs = ["localhost:3001", "localhost:3002"]
-  random.shuffle(addrs)
-  return addrs
-  
-def main():
-  for i in range(100):
-    addrs = randomAddrs()
-    t = Thread(target=executeTransactions, args=(addrs,))
-    t.start()
-  
-main()
