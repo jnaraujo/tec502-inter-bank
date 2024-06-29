@@ -32,6 +32,7 @@ func main() {
 
 	storage.Ring.Add(interbank.NewBankId(1), "localhost:3001")
 	storage.Ring.Add(interbank.NewBankId(2), "localhost:3002")
+	storage.Ring.Add(interbank.NewBankId(3), "localhost:3003")
 
 	signal := make(chan bool)
 
