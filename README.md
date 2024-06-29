@@ -412,7 +412,7 @@ Exemplo de resposta:
 ```
 
 ##### POST /api/payments/pay
-Esta [rota](/bank/internal/routes/bank/pay-route.go) é utilizada para realizar uma transferência entre contas. Ela recebe um objeto JSON contendo o IBK do autor da transação e uma lista de operações, onde cada operação contém o IBK da conta de origem, o IBK da conta de destino e o valor a ser transferido. O banco então realiza a transferência e retorna um objeto JSON indicando que a transação foi criada com sucesso. Como a transferência depende do InterBank, a transação é criada de forma assíncrona e processada em background.
+Esta [rota](/bank/internal/routes/bank/pay-route.go) é utilizada para realizar uma transferência entre contas. Ela recebe um objeto JSON contendo o IBK do autor da transação e uma lista de operações, onde cada operação contém o IBK da conta de origem, o IBK da conta de destino e o valor a ser transferido. O banco então realiza a transferência e retorna um objeto JSON com os detalhes da transação. Como a transferência depende do InterBank, a transação é criada de forma assíncrona e processada em background.
 
 Exemplo de requisição:
 ```http
@@ -440,7 +440,33 @@ Exemplo de resposta:
 200 OK
 
 {
-  "message": "Transação criada com sucesso"
+  "id": "374837eb-9f72-49d3-ae27-aa5ea68c2fd9",
+  "author": "1-1",
+  "operations": [
+    {
+      "id": "b04dc295-2de8-41dc-9cda-116fe07baeb0",
+      "from": "1-1",
+      "to": "2-1",
+      "type": "transfer",
+      "amount": "50",
+      "status": "pending",
+      "created_at": "2024-06-29T18:20:50.076733513Z",
+      "updated_at": "2024-06-29T18:20:50.076733563Z"
+    },
+    {
+      "id": "01e98458-6235-4a71-b369-af06b605ccff",
+      "from": "2-1",
+      "to": "2-2",
+      "type": "transfer",
+      "amount": "100",
+      "status": "pending",
+      "created_at": "2024-06-29T18:20:50.076876201Z",
+      "updated_at": "2024-06-29T18:20:50.076876251Z"
+    }
+  ],
+  "created_at": "2024-06-29T18:20:50.076883013Z",
+  "updated_at": "2024-06-29T18:20:50.076883064Z",
+  "status": "pending"
 }
 ```
 

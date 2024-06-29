@@ -84,7 +84,5 @@ func PayRoute(c *fiber.Ctx) error {
 	storage.Transactions.Save(transaction)
 	storage.TransactionQueue.Add(transaction.Id)
 
-	return c.Status(http.StatusCreated).JSON(&fiber.Map{
-		"message": "Transação criada com sucesso",
-	})
+	return c.Status(http.StatusCreated).JSON(&transaction)
 }
