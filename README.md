@@ -602,9 +602,9 @@ Por exemplo, na operação de depósito, o lock é adquirido antes de adicionar 
 
 ```go
 func (ts *transactionsStorage) Save(tr models.Transaction) {
-	ts.mu.Lock()
-	ts.data[tr.Id] = tr
-	ts.mu.Unlock()
+   ts.mu.Lock()
+   ts.data[tr.Id] = tr
+   ts.mu.Unlock()
 }
 ```
 
@@ -622,33 +622,33 @@ Por exemplo, na operação de transferência, caso a conta de origem não tem sa
 
 ```go
 func processTransaction(tr models.Transaction) error {
-  // processa cada operação da transação
-	for _, op := range tr.Operations {
-    // tenta subtrair o crédito da conta de origem
-		err := services.SubCreditFromAccount(op.From, op.Amount)
-    // se falhar, reverte as operações realizadas até o momento
-		if err != nil {
-      // reverte as operações realizadas até o momento
-			rollbackOperations(tr)
-			return err
-		}
+   // processa cada operação da transação
+   for _, op := range tr.Operations {
+   // tenta subtrair o crédito da conta de origem
+   err := services.SubCreditFromAccount(op.From, op.Amount)
+   // se falhar, reverte as operações realizadas até o momento
+   if err != nil {
+   // reverte as operações realizadas até o momento
+   rollbackOperations(tr)
+   return err
+   }
 
-    // tenta adicionar o crédito na conta de destino
-		err = services.AddCreditToAccount(op.To, op.Amount)
-		if err != nil {
-			// como falou na segunda parte, reverte a primeira parte (subtrair crédito da conta de origem)
-			services.AddCreditToAccount(op.From, op.Amount)
-      // reverte as operações realizadas até o momento
-			rollbackOperations(tr)
-			return err
-		}
+   // tenta adicionar o crédito na conta de destino
+   err = services.AddCreditToAccount(op.To, op.Amount)
+   if err != nil {
+   // como falou na segunda parte, reverte a primeira parte (subtrair crédito da conta de origem)
+   services.AddCreditToAccount(op.From, op.Amount)
+   // reverte as operações realizadas até o momento
+   rollbackOperations(tr)
+   return err
+   }
 
-    // atualiza o status da operação para sucesso
-		storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusSuccess)
-	}
-  // atualiza o status da transação para sucesso
-	storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusSuccess)
-	return nil
+   // atualiza o status da operação para sucesso
+   storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusSuccess)
+   }
+   // atualiza o status da transação para sucesso
+   storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusSuccess)
+   return nil
 }
 ```
 
@@ -676,8 +676,8 @@ Assim que o banco detentor do token termina de processar as transações, ele at
 
 ```go
 type Token struct {
-  Owner int interbank.BankId // ID do banco que é dono do token
-  Ts    time.Time          // Data e hora em que o token foi criado
+   Owner int interbank.BankId // ID do banco que é dono do token
+   Ts    time.Time          // Data e hora em que o token foi criado
 }
 ```
 
@@ -688,15 +688,15 @@ Todos os bancos do consórcio são definidos com antecedência e cada banco poss
 
 ```go
 type ringData struct {
-	Id   interbank.BankId
-	Addr string
+   Id   interbank.BankId
+   Addr string
 }
 
 // implementação de um token ring para
 // comunicação entre os bancos
 type ringStorage struct {
-	mu   sync.RWMutex
-	ring []ringData
+   mu   sync.RWMutex
+   ring []ringData
 }
 ```
 
@@ -704,14 +704,14 @@ type ringStorage struct {
 Quando o sistema é iniciado, o banco com ID mais baixo é o responsável por criar o token e passá-lo para o próximo banco. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando o token chega no último banco, ele é passado de volta para o primeiro banco, fechando o anel. Esse processo é repetido indefinidamente, garantindo que cada banco tenha a oportunidade de acessar e atualizar as informações das contas de forma ordenada e sem conflitos. O código a seguir demonstra como o token é passado de banco em banco.
 
 ```go
-  // Se o banco atual é o banco com menor ID
-	if storage.Ring.FindBankWithLowestId().Id == config.Env.BankId {
-		// verifica se o token já esta na rede.
-		if !services.IsTokenOnRing() {
-			// se não estiver, cria o token
-			services.BroadcastToken(config.Env.BankId)
-		}
-	}
+   // Se o banco atual é o banco com menor ID
+   if storage.Ring.FindBankWithLowestId().Id == config.Env.BankId {
+   // verifica se o token já esta na rede.
+   if !services.IsTokenOnRing() {
+      // se não estiver, cria o token
+      services.BroadcastToken(config.Env.BankId)
+   }
+}
 ```
 
 ### Passagem do Token
@@ -721,19 +721,19 @@ O código abaixo demonstra como a passagem do token é realizada. O banco verifi
 ```go
 // Verifica se o banco possui o token (localmente)
 if storage.Token.HasToken() {
-  // Em seguida, ele pergunta a rede quem é o dono do token
-  // É feita essa segunda verificação para garantir que o token não foi perdido
-  bank := services.AskBankWithToken()
-  if bank != nil && bank.Owner != storage.Token.Get().Owner {
-    // Se o banco atual não for o real dono do Token, ele atualiza o token internamente
-    storage.Token.Set(*bank)
-    continue
-  }
+   // Em seguida, ele pergunta a rede quem é o dono do token
+   // É feita essa segunda verificação para garantir que o token não foi perdido
+   bank := services.AskBankWithToken()
+   if bank != nil && bank.Owner != storage.Token.Get().Owner {
+      // Se o banco atual não for o real dono do Token, ele atualiza o token internamente
+      storage.Token.Set(*bank)
+      continue
+   }
 
-  // se o banco atual for o dono do token, ele processa as transações localmente
-  processLocalTransactions()
-  // em seguida, ele passa o token para o próximo banco
-  services.PassToken()
+   // se o banco atual for o dono do token, ele processa as transações localmente
+   processLocalTransactions()
+   // em seguida, ele passa o token para o próximo banco
+   services.PassToken()
 }
 ```
 
