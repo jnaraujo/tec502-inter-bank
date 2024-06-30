@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log/slog"
 
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/config"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/http"
@@ -28,7 +29,7 @@ func main() {
 	config.Env.ServerPort = port
 	config.Env.BankId = interbank.NewBankId(uint16(bankId))
 
-	fmt.Printf("Bank App - Id: %s\n", config.Env.BankId)
+	slog.Info(fmt.Sprintf("Bank App - Id: %s", config.Env.BankId))
 
 	storage.Ring.Add(interbank.NewBankId(1), "localhost:3001")
 	storage.Ring.Add(interbank.NewBankId(2), "localhost:3002")

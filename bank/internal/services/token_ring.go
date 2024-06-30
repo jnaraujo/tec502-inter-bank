@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 
 func SetupTokenRing() {
 	if storage.Ring.FindBankWithLowestId().Id == config.Env.BankId {
-		fmt.Println("I'm the bank with the lowest id")
+		slog.Info("I'm the bank with the lowest id")
 		// verifica se o token já esta na rede.
 		if !IsTokenOnRing() {
 			// se não estiver, cria o token
@@ -89,7 +90,7 @@ func PassToken() {
 
 	nextBankId := findNextValidBank(nextBank.Id)
 	if nextBankId == nil {
-		fmt.Println("Não conseguiu passar o token para um banco valido. Mantém o token localmente.")
+		slog.Info("Não conseguiu passar o token para um banco valido. Mantém o token localmente.")
 		BroadcastToken(config.Env.BankId) // faz o broadcast do token para os outros bancos - para garantir que o token não se perca
 		return
 	}

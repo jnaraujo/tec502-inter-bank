@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -48,7 +49,7 @@ func FindAllUserAccountsInterBank(document string) []models.Account {
 func FindAccountInterBank(ibk interbank.IBK) *models.Account {
 	bankURL := ""
 	for _, bank := range storage.Ring.List() {
-		fmt.Println(bank.Id, ibk.BankId)
+		slog.Info(fmt.Sprintf("Bank: %d", bank.Id))
 		if bank.Id == ibk.BankId {
 			bankURL = bank.Addr
 			break
@@ -56,24 +57,24 @@ func FindAccountInterBank(ibk interbank.IBK) *models.Account {
 	}
 
 	if bankURL == "" {
-		fmt.Println("Bank not found")
+		slog.Error("Bank not found")
 		return nil
 	}
 
 	resp, err := http.Get(fmt.Sprintf("http://%s/interbank/account/ibk/%s", bankURL, ibk))
 	if err != nil {
-		fmt.Println("Error getting account")
+		slog.Error(err.Error())
 		return nil
 	}
 	if resp.StatusCode != http.StatusOK {
-		fmt.Println("Account not found")
+		slog.Error("Account not found")
 		return nil
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error reading body")
+		slog.Error(err.Error())
 		return nil
 	}
 
@@ -124,7 +125,7 @@ func AddCreditToAccount(to interbank.IBK, amount decimal.Decimal) error {
 	resp, err := client.Post(fmt.Sprintf("http://localhost:300%d/interbank/add-credit", to.BankId), "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		if os.IsTimeout(err) {
-			fmt.Println("timeout!")
+			slog.Error("Timeout")
 		}
 
 		return errors.New("bank is offline")
