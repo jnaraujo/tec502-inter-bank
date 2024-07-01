@@ -16,13 +16,13 @@ type authBodySchema struct {
 func AuthRoute(c *fiber.Ctx) error {
 	var body authBodySchema
 	if errs := validate.ParseAndValidate(c.Body(), &body); len(errs) > 0 {
-		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
+		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"errors": errs})
 	}
 
 	acc := storage.Accounts.FindAccountByIBK(body.IBK)
 	if acc == nil {
 		return c.Status(http.StatusUnauthorized).JSON(&fiber.Map{
-			"error": "Conta não encontrada",
+			"message": "Conta não encontrada",
 		})
 	}
 

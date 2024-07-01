@@ -19,7 +19,7 @@ type setTokenBodySchema struct {
 func SetToken(c *fiber.Ctx) error {
 	var body setTokenBodySchema
 	if errs := validate.ParseAndValidate(c.Body(), &body); len(errs) > 0 {
-		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
+		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"errors": errs})
 	}
 
 	storage.Token.Set(token.Token{

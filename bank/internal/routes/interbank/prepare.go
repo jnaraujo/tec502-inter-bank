@@ -23,7 +23,7 @@ type prepareBodySchema struct {
 func PrepareRoute(c *fiber.Ctx) error {
 	var body prepareBodySchema
 	if errs := validate.ParseAndValidate(c.Body(), &body); len(errs) > 0 {
-		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
+		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"errors": errs})
 	}
 
 	fromAcc := storage.Accounts.FindAccountByIBK(body.Operation.From)

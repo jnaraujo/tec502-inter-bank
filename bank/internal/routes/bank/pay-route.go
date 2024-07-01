@@ -28,7 +28,7 @@ type payRouteBodySchema struct {
 func PayRoute(c *fiber.Ctx) error {
 	var body payRouteBodySchema
 	if errs := validate.ParseAndValidate(c.Body(), &body); len(errs) > 0 {
-		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
+		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"errors": errs})
 	}
 
 	author := storage.Accounts.FindAccountByIBK(body.Author)

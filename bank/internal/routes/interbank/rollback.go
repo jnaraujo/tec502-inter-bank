@@ -18,7 +18,7 @@ type rollbackBodySchema struct {
 func RollbackRoute(c *fiber.Ctx) error {
 	var body rollbackBodySchema
 	if errs := validate.ParseAndValidate(c.Body(), &body); len(errs) > 0 {
-		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"error": errs})
+		return c.Status(http.StatusBadRequest).JSON(&fiber.Map{"errors": errs})
 	}
 
 	transaction := storage.Transactions.FindTransactionById(body.TxId)

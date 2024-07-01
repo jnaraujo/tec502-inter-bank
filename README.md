@@ -450,7 +450,7 @@ Exemplo de resposta para IBK inválido:
 401 Unauthorized
 
 {
-  "error": "Conta não encontrada"
+  "message": "Conta não encontrada"
 }
 ```
 
