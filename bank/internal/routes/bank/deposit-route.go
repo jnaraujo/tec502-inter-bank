@@ -37,7 +37,7 @@ func DepositRoute(c *fiber.Ctx) error {
 
 	transaction := storage.Transactions.CreateDepositTransaction(acc.InterBankKey, body.Amount)
 
-	_, ok := storage.Accounts.AddToAccountBalance(acc.Id, body.Amount)
+	ok := storage.Accounts.AddToAccountBalance(acc.Id, body.Amount)
 	if !ok {
 		storage.Transactions.UpdateOperationStatus(transaction, transaction.Operations[0], models.OperationStatusFailed)
 		storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusFailed)
@@ -47,7 +47,7 @@ func DepositRoute(c *fiber.Ctx) error {
 	}
 
 	storage.Transactions.UpdateOperationStatus(transaction, transaction.Operations[0], models.OperationStatusSuccess)
-	transaction = storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusSuccess)
+	transaction = *storage.Transactions.UpdateTransactionStatus(transaction, models.TransactionStatusSuccess)
 
 	return c.Status(http.StatusOK).JSON(&transaction)
 }

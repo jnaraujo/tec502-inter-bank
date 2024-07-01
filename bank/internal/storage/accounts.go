@@ -151,38 +151,108 @@ func (as *accountsStorage) FindAccountByIBK(ibk interbank.IBK) *models.Account {
 	return nil
 }
 
-func (as *accountsStorage) AddToAccountBalance(accId int, amount decimal.Decimal) (*models.Account, bool) {
+func (as *accountsStorage) AddToAccountBalance(accId int, amount decimal.Decimal) bool {
 	as.mu.Lock()
 	defer as.mu.Unlock()
 
 	acc, ok := as.data[accId]
 	if !ok {
-		return nil, ok
+		return false
 	}
 
 	acc.Balance = acc.Balance.Add(amount)
 	as.data[accId] = acc
 
-	return &acc, ok
+	return true
 }
 
-func (as *accountsStorage) SubFromAccountBalance(accId int, amount decimal.Decimal) error {
+func (as *accountsStorage) SubFromAccountBalance(accId int, amount decimal.Decimal) bool {
 	as.mu.Lock()
 	defer as.mu.Unlock()
 
 	acc, ok := as.data[accId]
 	if !ok {
-		return errors.New("conta não encontrada")
+		return false
 	}
 
 	if acc.Balance.LessThan(amount) {
-		return errors.New("saldo insuficiente")
+		return false
 	}
 
 	acc.Balance = acc.Balance.Sub(amount)
 	as.data[accId] = acc
 
-	return nil
+	return true
+}
+
+func (as *accountsStorage) AddToPendingAccountBalance(accId int, amount decimal.Decimal) bool {
+	as.mu.Lock()
+	defer as.mu.Unlock()
+
+	acc, ok := as.data[accId]
+	if !ok {
+		return false
+	}
+
+	acc.PendingBalance = acc.PendingBalance.Add(amount)
+	as.data[accId] = acc
+
+	return true
+}
+
+func (as *accountsStorage) SubFromPendingAccountBalance(accId int, amount decimal.Decimal) bool {
+	as.mu.Lock()
+	defer as.mu.Unlock()
+
+	acc, ok := as.data[accId]
+	if !ok {
+		return false
+	}
+
+	acc.PendingBalance = acc.PendingBalance.Sub(amount)
+	as.data[accId] = acc
+
+	return true
+}
+
+func (as *accountsStorage) AddToBlockedAccountBalance(accId int, amount decimal.Decimal) bool {
+	as.mu.Lock()
+	defer as.mu.Unlock()
+
+	acc, ok := as.data[accId]
+	if !ok {
+		return false
+	}
+
+	acc.BlockedBalance = acc.BlockedBalance.Add(amount)
+	as.data[accId] = acc
+
+	return true
+}
+
+func (as *accountsStorage) SubFromBlockedAccountBalance(accId int, amount decimal.Decimal) bool {
+	as.mu.Lock()
+	defer as.mu.Unlock()
+
+	acc, ok := as.data[accId]
+	if !ok {
+		return false
+	}
+
+	acc.BlockedBalance = acc.BlockedBalance.Sub(amount)
+	as.data[accId] = acc
+
+	return true
+}
+
+func (as *accountsStorage) CanSubFromAccount(accId int, amount decimal.Decimal) bool {
+	as.mu.Lock()
+	defer as.mu.Unlock()
+
+	acc, exists := as.data[accId]
+	finalBalance := acc.Balance.Sub(acc.BlockedBalance).Add(acc.PendingBalance)
+
+	return exists && finalBalance.GreaterThanOrEqual(amount)
 }
 
 func (as *accountsStorage) TransferBalance(from, to int, amount decimal.Decimal) error {

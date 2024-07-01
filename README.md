@@ -28,6 +28,17 @@ Neste contexto, o método de Token Ring foi escolhido como a solução para reso
 - [Arquitetura do projeto](#arquitetura-do-projeto)
   - [Interface gráfica](#interface-gráfica)
   - [Código do banco](#código-do-banco)
+- [Transações interbancárias](#transações-interbancárias)
+  - [Atomicidade](#atomicidade)
+  - [Assincronia](#assincronia)
+  - [Consistência](#consistência)
+- [Token Ring](#token-ring)
+  - [Concorrência distribuída](#concorrência-distribuída)
+  - [Transações simultâneas](#transações-simultâneas)
+  - [Estrutura do Token Ring](#estrutura-do-token-ring)
+  - [Inicialização do Token Ring](#inicialização-do-token-ring)
+  - [Passagem do Token](#passagem-do-token)
+  - [Detecção e recuperação de falhas](#detecção-e-recuperação-de-falhas)
 - [Comunicação](#comunicação)
   - [Comunicação entre a interface e o banco](#comunicação-entre-a-interface-e-o-banco)
     - [Rotas da API](#rotas-da-api)
@@ -41,24 +52,15 @@ Neste contexto, o método de Token Ring foi escolhido como a solução para reso
       - [POST /api/payments/pay](#post-apipaymentspay)
   - [Comunicação entre os bancos (InterBank)](#comunicação-entre-os-bancos-interbank)
     - [Rotas do InterBank](#rotas-do-interbank)
-      - [POST /interbank/add-credit](#post-interbankadd-credit)
-      - [POST /interbank/sub-credit](#post-interbanksub-credit)
+      - [POST /interbank/prepare](#post-interbankprepare)
+      - [POST /interbank/rollback](#post-interbankrollback)
+      - [POST /interbank/commit](#post-interbankcommit)
         - [GET /account/:document](#get-accountdocument)
       - [POST /interbank/account/ibk/:ibk](#post-interbankaccountibkibk)
       - [PUT /interbank/token](#put-interbanktoken)
       - [GET /interbank/token](#get-interbanktoken)
       - [GET /interbank/token/ok](#get-interbanktokenok)
 - [Sincronização dos dados internamente no banco](#sincronização-dos-dados-internamente-no-banco)
-- [Transações assíncronas](#transações-assíncronas)
-- [Transações atômicas](#transações-atômicas)
-- [Token Ring](#token-ring)
-- [Concorrência distribuída](#concorrência-distribuída)
-  - [Transações simultâneas](#transações-simultâneas)
-  - [Estrutura do Token](#estrutura-do-token)
-  - [Estrutura do Token Ring](#estrutura-do-token-ring)
-  - [Inicialização do Token Ring](#inicialização-do-token-ring)
-  - [Passagem do Token](#passagem-do-token)
-  - [Detecção e recuperação de falhas](#detecção-e-recuperação-de-falhas)
 - [Testes](#testes)
 - [Conclusão](#conclusão)
 
@@ -141,6 +143,169 @@ broker
 │   ├── transaction_processor # Serviço que roda em background para processar as transações
 |   ├── validate # Funções para validação de dados
 ```
+
+## Transações interbancárias
+O principal objetivo do InterBank é promover a comunicação entre os bancos do consórcio, permitindo que os usuários realizem transações entre suas contas em diferentes bancos. Para isso, o InterBank é responsável por garantir que as transações sejam realizadas de forma segura e eficiente, além de garantir a consistência dos dados.
+
+Desse modo, todas as transações realizadas entre os bancos do consórcio tem como objetivo a atomicidade, assincronia e consistência. Isso significa que as transações são realizadas de forma completa e consistente, sem que ocorram falhas ou interrupções, garantindo que as transações sejam realizadas de forma ordenada e sem conflitos.
+
+### Atomicidade
+Atomicidade é uma das propriedades ACID (Atomicidade, Consistência, Isolamento e Durabilidade) que garante que as transações sejam realizadas de forma completa e consistente, sem que ocorram falhas ou interrupções. Isso significa que todas as operações presentes em uma transação devem ocorrer por completo ou nenhuma delas deve ocorrer. Desse modo, caso uma operação falhe, a transação é marcada como falha e todas as operações realizadas até o momento são revertidas.
+
+Para garantir a atomicidade no Interbank, foi utilizado uma variação do padrão [Two-Phase Commit](https://martinfowler.com/articles/patterns-of-distributed-systems/two-phase-commit.html). Nestes sistema, as transações são divididas em duas fases: a preparação e a confirmação. Na fase de preparação, as operações são preparadas, mas não são efetivamente realizadas. Caso todas as operações sejam preparadas com sucesso, a transação é confirmada e as operações são efetivamente realizadas. Caso algum erro ocorra durante a preparação das operações, a transação é marcada como falha e todas as operações preparadas até o momento são revertidas.
+
+Por exemplo, o código abaixo mostra a função `ProcessTransaction` que é responsável por processar uma transação. Nela, as operações são preparadas e, caso todas sejam preparadas com sucesso, a transação é confirmada. Caso algum erro ocorra durante a preparação das operações, a transação é marcada como falha e todas as operações preparadas até o momento são revertidas. Além disso, se algum erro ocorrer durante a confirmação das operações, a transação é marcada como falha e todas as operações realizadas até o momento são revertidas. Desse modo, a atomicidade é garantida.
+
+```go
+// Código de bank/internal/services/inter_bank.go
+func ProcessTransaction(tr models.Transaction) error {
+	externalTransactions := []txProcess{} // transações externas que foram realizadas
+	isSuccess := true
+	for _, op := range tr.Operations {
+		txDebit := Prepare(op, StepDebit) // prepara a operação de débito
+		if txDebit == nil { // se ocorrer algum erro, a transação é marcada como falha
+			isSuccess = false
+			break
+		}
+		externalTransactions = append(externalTransactions, txProcess{Tx: txDebit, Step: StepDebit})
+
+		txCredit := Prepare(op, StepCredit) // prepara a operação de crédito
+		if txCredit == nil { // se ocorrer algum erro, a transação é marcada como falha
+			isSuccess = false
+			break
+		}
+		externalTransactions = append(externalTransactions, txProcess{Tx: txCredit, Step: StepCredit})
+	}
+
+	if !isSuccess { // se ocorreu algum erro, as transações ja feitas devem sofrer rollback
+		for _, tx := range externalTransactions { // as transações são revertidas
+			Rollback(tx.Tx.Id, tx.Tx.Operations[0], tx.Step)
+		}
+		for _, op := range tr.Operations { // as operações da transação são marcadas como falha
+			storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusFailed)
+		}
+		storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusFailed) // a transação é marcada como falha
+		return errors.New("transaction failed")
+	}
+
+	for _, tx := range externalTransactions { // se todas as operações foram preparadas
+		ok := Commit(tx.Tx.Id, tx.Tx.Operations[0], tx.Step) // as operações são confirmadas
+		if !ok {
+			isSuccess = false // se ocorrer algum erro, a transação é marcada como falha
+			break
+		}
+	}
+
+	if !isSuccess { // se ocorreu algum erro, as transações ja feitas devem sofrer rollback
+	 // ...
+	}
+
+	for _, op := range tr.Operations { // as operações da transação são marcadas como sucesso
+		storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusSuccess)
+	}
+	storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusSuccess) // a transação é marcada como sucesso
+	return nil
+}
+```
+
+### Assincronia
+As transações no InterBank são realizadas de forma assíncrona. Isso significa que as transações são criadas e processadas em background, sem que o usuário precise esperar pela conclusão da transação. Desse modo, o usuário pode realizar outras operações enquanto a transação é processada, garantindo que o sistema seja eficiente e responsivo.
+
+Quando uma transação é criada em um banco, ela é adicionada na [fila interna](bank/internal/storage/transaction_queue.go) do banco. Essa fila é processada em background por um [serviço](bank/internal/transaction_processor/processor.go) que é responsável por processar as transações de forma assíncrona. O serviço verifica de tempos em tempos se o banco tem a posse do [token](#token-ring) e, caso tenha, processa a transação. Caso contrário, a transação é mantida na fila até que o banco possua o token. Desse modo, nenhuma transação é realizada até que o banco possua o token. Isso garante que as transações sejam realizadas de forma ordenada e sem conflitos.
+
+Assim que o token é adquirido, o banco começa o processamento das transações, uma de cada vez e na ordem em que foram adicionadas na file. Como cada transações possui N operações, o banco processa cada operação de forma atômica. Assim, caso uma operação falhe, a transação é marcada como falha e nenhuma operação é realizada.
+
+Todas as operações realizada no processamento das operações (como verificar se o usuário existe, adicionar fundos na conta, subtrair fundos da conta, etc) são realizados através do InterBank.
+
+### Consistência
+A consistência é uma das propriedades ACID (Atomicidade, Consistência, Isolamento e Durabilidade) que garante que as transações sejam realizadas de forma ordenada e sem conflitos. No Interbank, a consistência é garantida através do uso do [Token Ring](#token-ring), que é responsável por garantir que as transações sejam realizadas de forma ordenada e sem conflitos. Além disso, o InterBank é responsável por garantir que as transações sejam realizadas de forma consistente, ou seja, que as operações sejam realizadas de forma completa e correta.
+
+Todas as transações criadas no mesmo banco são processadas de forma ordenada e sem conflitos. Isso significa que, caso duas transações sejam criadas no mesmo banco, a primeira transação é processada antes da segunda transação. Além disso, todas as operações presentes em uma transação são realizadas de forma completa e correta, garantindo que as transações sejam realizadas de forma consistente. O InterBank, porém, não garante que a ordem das transações seja a mesma em todos os bancos, podendo uma transação criada em P+1 no banco 2 ser processada antes de uma transação criada em P no banco 1. Ainda assim, a consistência é garantida, pois todas as operações são realizadas de forma completa e correta.
+
+## Token Ring
+O Token Ring é um protocolo que utiliza um token para controlar o acesso a uma rede de computadores. O token é passado de nó em nó, garantindo que cada nó tenha a oportunidade de acessar a rede e realizar operações de forma ordenada e sem conflitos. O algoritmo de Token Ring é baseado em uma topologia em anel e amplamente utilizado em redes e computadores, sendo originalmente definido pelo padrão IEEE 802.5.
+
+No contexto do InterBank, o Token Ring é utilizado para garantir que cada banco tenha a oportunidade de acessar e atualizar as informações das contas de forma ordenada e sem conflitos. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando um banco possui o token, ele pode realizar operações de leitura e escrita nos dados armazenados. Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele.
+
+### Concorrência distribuída
+O uso do Token Ring garante que apenas um banco terá acesso a rede por vez, impedindo que ocorram conflitos entre os bancos. Assim, mesmo com diferentes transações sendo criadas na rede ao mesmo tempo, apenas um banco poderá processar as suas transações locais por vez. Além disso, como cada banco possui sua fila local e processa apenas uma transação por vez, é garantido que as transações sejam realizadas de forma ordenada e sem conflitos.
+
+Desse modo, as operações são realizada uma de cada vez e na ordem em que foram adicionadas na fila, garantindo que o saldo final da conta seja consistente e sem duplicação de dados. Além disso, devido a natureza atômica das transações, até as transações que falharam são processadas de forma consistente.
+
+### Transações simultâneas
+Garantir que diferentes usuários possam realizar transações simultâneas é um dos principais desafios de um sistema distribuído. Com o método de Token Ring, é possível garantir que as transações sejam realizadas de forma ordenada e sem conflitos, mesmo que diferentes usuários estejam realizando transações ao mesmo tempo.
+
+Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele. Para garantir que as operações sejam realizadas de forma ordenada e sem conflitos, foi implementado um mecanismo de fila de transações. Assim que uma transação é criada, ela é adicionada na fila de transações do banco. Quando o banco possui o token, ele processa as transações da fila, uma de cada vez e na ordem em que foram adicionadas. Isso garante que as transações sejam realizadas de forma ordenada e sem conflitos.
+
+Desse modo, mesmo que diferentes transações que afetem o mesmo usuário sejam criadas no mesmo banco (ou em outros bancos), elas são processadas de forma ordenada e sem conflitos. Isso garante que as transações sejam realizadas de forma consistente e sem duplicação de dados.
+
+### Estrutura do Token Ring
+O [Token Ring](bank/internal/storage/ring.go) é composto por um conjunto de bancos (nós) que se comunicam entre si para realizar transações financeiras de forma segura e eficiente. Cada banco possui um ID único, que é utilizado para determinar a ordem em que os bancos acessam e atualizam as informações das contas. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos.
+
+Todos os bancos do consórcio são definidos com antecedência e cada banco possui um ID único. O ID é utilizado para determinar a ordem em que os bancos acessam e atualizam as informações das contas. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos.
+
+```go
+// Código de bank/internal/storage/ring.go
+type ringData struct {
+   Id   interbank.BankId
+   Addr string
+}
+
+// implementação de um token ring para
+// comunicação entre os bancos
+type ringStorage struct {
+   mu   sync.RWMutex
+   ring []ringData
+}
+```
+
+### Inicialização do Token Ring
+Quando o sistema é iniciado, o banco com ID mais baixo é o responsável por criar o token e passá-lo para o próximo banco. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando o token chega no último banco, ele é passado de volta para o primeiro banco, fechando o anel. Esse processo é repetido indefinidamente, garantindo que cada banco tenha a oportunidade de acessar e atualizar as informações das contas de forma ordenada e sem conflitos. O código a seguir demonstra como o token é passado de banco em banco.
+
+```go
+// código de bank/internal/services/token_ring.go
+// Se o banco atual é o banco com menor ID
+if storage.Ring.FindBankWithLowestId().Id == config.Env.BankId {
+// verifica se o token já esta na rede.
+if !services.IsTokenOnRing() {
+   // se não estiver, cria o token
+   services.BroadcastToken(config.Env.BankId)
+}
+}
+```
+
+### Passagem do Token
+Quando um banco possui o token, ele pode realizar operações de leitura e escrita nos dados armazenados. Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele. Assim que o banco termina de processar as transações, ele passa o token para o próximo banco. Caso o próximo banco não esteja disponível, ele tentará enviar para o próximo banco, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual.
+
+O código abaixo demonstra como a passagem do token é realizada. O banco verifica se o próximo banco está disponível e, caso esteja, ele passa o token para ele. Caso contrário, ele tenta passar para o próximo banco, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual.
+```go
+// código de bank/internal/transaction_processor/processor.go
+// Verifica se o banco possui o token (localmente)
+if storage.Token.HasToken() {
+   // Em seguida, ele pergunta a rede quem é o dono do token
+   // É feita essa segunda verificação para garantir que o token não foi perdido
+   bank := services.AskBankWithToken()
+   if bank != nil && bank.Owner != storage.Token.Get().Owner {
+      // Se o banco atual não for o real dono do Token, ele atualiza o token internamente
+      storage.Token.Set(*bank)
+      continue
+   }
+
+   // se o banco atual for o dono do token, ele processa as transações localmente
+   processLocalTransactions()
+   // em seguida, ele passa o token para o próximo banco
+   services.PassToken()
+}
+```
+
+### Detecção e recuperação de falhas
+Um dos principais problemas da utilização do método de Token Ring é a possibilidade de falhas. Caso um banco que possua o token caia, o token é perdido e as transações não podem ser realizadas. Para resolver esse problema, foi implementado um mecanismo de detecção e recuperação de falhas.
+
+Por exemplo, quando o banco que detém termina de processar as transações, ele passa o token para o próximo banco. Caso o próximo banco não esteja disponível, ele tentará enviar para o próximo banco, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual.
+
+Para garantir que não ocorra duplicação de tokens, antes de iniciar o processamento das transações, o banco envia um multicast para todos os bancos do consórcio, perguntando quem é o dono do token. Caso o banco seja o dono do token, ele inicia o processamento das transações. Caso contrário, ele atualiza as informações internas sobre quem é o dono do token.
+
+Além disso, foi implementado um mecanismo de timeout para garantir que o token seja passado de banco em banco. Caso o banco que detém o token não passe o token para o próximo banco em um determinado tempo, o token é considerado perdido e o próximo banco assume a responsabilidade de criar um novo token e avisar a todos que ele é agora o novo detentor do token. Para isso, o próximo banco utiliza o horário de criação do token (estrutura `Ts` do [Token](#estrutura-do-token)) como referência para verificar se o token foi perdido. Caso a diferença entre o horário atual e o horário de criação do token seja maior que um determinado tempo, o token é considerado perdido e o próximo banco assume a responsabilidade de criar um novo token. Isso garante que o token continue circulando entre os bancos, mesmo em caso de falhas.
 
 ## Comunicação
 Como forma de padronizar a comunicação tanto entre a interface e o banco, quanto entre os bancos do consórcio, foi utilizado o padrão de API REST. O uso de APIs REST permite que as operações sejam realizadas de forma simples e eficiente, além de garantir a interoperabilidade entre diferentes sistemas.
@@ -265,7 +430,7 @@ Exemplo de resposta:
 
 {
   "id": "f64417e9-683c-4de8-a74b-31133002a808",
-  "author": "1-1",
+  "owner": "1-1",
   "operations": [
     {
       "id": "69600a35-2083-43ac-ba5d-a8a62467eab1",
@@ -362,7 +527,7 @@ Exemplo de resposta:
 [
   {
     "id": "5f86cc57-a57b-4bcc-b707-3df28eaa679c",
-    "author": "1-1",
+    "owner": "1-1",
     "operations": [
       {
         "id": "153e7f58-0764-4767-bde6-cd5ac00ae73b",
@@ -391,7 +556,7 @@ Exemplo de resposta:
   },
   {
     "id": "f64417e9-683c-4de8-a74b-31133002a808",
-    "author": "1-1",
+    "owner": "1-1",
     "operations": [
       {
         "id": "69600a35-2083-43ac-ba5d-a8a62467eab1",
@@ -441,7 +606,7 @@ Exemplo de resposta:
 
 {
   "id": "374837eb-9f72-49d3-ae27-aa5ea68c2fd9",
-  "author": "1-1",
+  "owner": "1-1",
   "operations": [
     {
       "id": "b04dc295-2de8-41dc-9cda-116fe07baeb0",
@@ -474,16 +639,20 @@ Exemplo de resposta:
 Como forma de padronizar a comunicação entre os bancos do consórcio, foi definido um conjunto de padrões para a comunicação entre os bancos. O InterBank é responsável por garantir que as mensagens sejam enviadas e recebidas de forma correta, além de garantir a consistência dos dados.
 
 #### Rotas do InterBank
-##### POST /interbank/add-credit
-Esta [rota](/bank/internal/routes/interbank/add-credit.go) é utilizada para adicionar crédito a uma conta. Ela recebe um objeto JSON contendo o IBK da conta e o valor a ser adicionado. O banco então adiciona o crédito e retorna um objeto JSON indicando que o crédito foi adicionado com sucesso.
+##### POST /interbank/prepare
+Esta [rota](/bank/internal/routes/interbank/prepare.go) é utilizada para preparar uma transação. Ela recebe um objeto JSON contendo a operação a ser realizada e qual o passo a ser realizado (débito ou crédito). O banco então prepara a transação e retorna um objeto JSON indicando que a transação foi preparada com sucesso.
 
 Exemplo de requisição:
 ```http
 POST /interbank/add-credit
 
 {
-  "to": "1-1",
-  "amount": 100
+  "operation": {
+    "from": "1-1",
+    "to": "2-1",
+    "amount": 100
+  },
+  "step": "credit"
 }
 ```
 
@@ -491,20 +660,36 @@ Exemplo de resposta:
 ```http
 200 OK
 {
-  "message": "Crédito adicionado com sucesso"
-}
+ "id": "5f86cc57-a57b-4bcc-b707-3df28eaa679c",
+ "owner": "1-1",
+ "operations": [
+   {
+     "id": "153e7f58-0764-4767-bde6-cd5ac00ae73b",
+     "from": "1-1",
+     "to": "2-1",
+     "type": "transfer",
+     "amount": "100",
+     "status": "pending",
+     "created_at": "2024-06-28T20:08:52.768665384-03:00",
+     "updated_at": "2024-06-28T20:08:53.043557766-03:00"
+   },
+ ],
+ "created_at": "2024-06-28T20:08:52.768782115-03:00",
+ "updated_at": "2024-06-28T20:08:53.043558226-03:00",
+ "status": "pending"
+},
 ```
 
-##### POST /interbank/sub-credit
-Esta [rota](/bank/internal/routes/interbank/sub-credit.go) é utilizada para subtrair crédito de uma conta. Ela recebe um objeto JSON contendo o IBK da conta e o valor a ser subtraído. O banco então subtrai o crédito e retorna um objeto JSON indicando que o crédito foi subtraído com sucesso.
+##### POST /interbank/rollback
+Esta [rota](/bank/internal/routes/interbank/rollback.go) é utilizada para reverter uma transação. Ela recebe um objeto JSON contendo o ID da transação a ser revertida e qual o passo a ser revertido (débito ou crédito). O banco então reverte a transação e retorna um objeto JSON indicando que a transação foi revertida com sucesso.
 
 Exemplo de requisição:
 ```http
 POST /interbank/sub-credit
 
 {
-  "from": "1-1",
-  "amount": 100
+  "tx_id": "5f86cc57-a57b-4bcc-b707-3df28eaa679c",
+  "step": "credit"
 }
 ```
 
@@ -512,8 +697,61 @@ Exemplo de resposta:
 ```http
 200 OK
 {
-  "message": "Débito realizado com sucesso"
+ "id": "5f86cc57-a57b-4bcc-b707-3df28eaa679c",
+ "owner": "1-1",
+ "operations": [
+   {
+     "id": "153e7f58-0764-4767-bde6-cd5ac00ae73b",
+     "from": "1-1",
+     "to": "2-1",
+     "type": "transfer",
+     "amount": "100",
+     "status": "failed",
+     "created_at": "2024-06-28T20:08:52.768665384-03:00",
+     "updated_at": "2024-06-28T20:08:53.043557766-03:00"
+   },
+ ],
+ "created_at": "2024-06-28T20:08:52.768782115-03:00",
+ "updated_at": "2024-06-28T20:08:53.043558226-03:00",
+ "status": "failed"
+},
+```
+
+##### POST /interbank/commit
+Esta [rota](/bank/internal/routes/interbank/commit.go) é utilizada para confirmar uma transação. Ela recebe um objeto JSON contendo o ID da transação a ser confirmada e qual o passo a ser confirmado (débito ou crédito). O banco então confirma a transação e retorna um objeto JSON indicando que a transação foi confirmada com sucesso.
+
+Exemplo de requisição:
+```http
+POST /interbank/add-credit
+
+{
+  "tx_id": "5f86cc57-a57b-4bcc-b707-3df28eaa679c",
+  "step": "credit"
 }
+```
+
+Exemplo de resposta:
+```http
+200 OK
+{
+ "id": "5f86cc57-a57b-4bcc-b707-3df28eaa679c",
+ "owner": "1-1",
+ "operations": [
+   {
+     "id": "153e7f58-0764-4767-bde6-cd5ac00ae73b",
+     "from": "1-1",
+     "to": "2-1",
+     "type": "transfer",
+     "amount": "100",
+     "status": "success",
+     "created_at": "2024-06-28T20:08:52.768665384-03:00",
+     "updated_at": "2024-06-28T20:08:53.043557766-03:00"
+   },
+ ],
+ "created_at": "2024-06-28T20:08:52.768782115-03:00",
+ "updated_at": "2024-06-28T20:08:53.043558226-03:00",
+ "status": "success"
+},
 ```
 
 ###### GET /account/:document
@@ -636,150 +874,6 @@ func (ts *transactionsStorage) Save(tr models.Transaction) {
    ts.mu.Unlock()
 }
 ```
-
-## Transações assíncronas
-Quando uma transação é criada em um banco, ela é adicionada na [fila interna](bank/internal/storage/transaction_queue.go) do banco. Essa fila é processada em background por um [serviço](bank/internal/transaction_processor/processor.go) que é responsável por processar as transações de forma assíncrona. O serviço verifica de tempos em tempos se o banco tem a posse do token e, caso tenha, processa a transação. Caso contrário, a transação é mantida na fila até que o banco possua o token. Desse modo, nenhuma transação é realizada até que o banco possua o token. Isso garante que as transações sejam realizadas de forma ordenada e sem conflitos.
-
-Assim que o token é adquirido, o banco começa o processamento das transações, uma de cada vez e na ordem em que foram adicionadas na file. Como cada transações possui N operações, o banco processa cada operação de forma atômica. Assim, caso uma operação falhe, a transação é marcada como falha e nenhuma operação é realizada.
-
-Todas as operações realizada no processamento das operações (como verificar se o usuário existe, adicionar fundos na conta, subtrair fundos da conta, etc) são realizados através do InterBank.
-
-## Transações atômicas
-As transações no InterBank são atômicas, ou seja, elas são realizadas de forma completa e consistente, sem que ocorram falhas ou interrupções. Isso significa que, caso uma transação falhe, nenhuma operação é realizada e a transação é marcada como falha. Isso garante que as transações sejam realizadas de forma consistente e sem duplicação de dados.
-
-Por exemplo, na operação de transferência, caso a conta de origem não tem saldo suficiente para realizar ou não exista, a função `SubCreditFromAccount` retorna um erro e chamada a função `rollbackOperations` que reverte todas as operações realizadas até o momento. Caso um operação de crédito falhe, a função `AddCreditToAccount` reverte a operação de débito realizada anteriormente, chamando a função `rollbackOperations` em seguida para reverter todas as operações realizadas até o momento.
-
-```go
-// Código de bank/internal/services/inter_bank.go
-// processTransaction processa uma transação de forma atômica
-func processTransaction(tr models.Transaction) error {
-  // processa cada operação da transação
-  for _, op := range tr.Operations {
-    // tenta subtrair o crédito da conta de origem
-    err := services.SubCreditFromAccount(op.From, op.Amount)
-      // se falhar, reverte as operações realizadas até o momento
-      if err != nil {
-      // reverte as operações realizadas até o momento
-      rollbackOperations(tr)
-      return err
-    }
-
-    // tenta adicionar o crédito na conta de destino
-    err = services.AddCreditToAccount(op.To, op.Amount)
-    if err != nil {
-      // como falou na segunda parte, reverte a primeira parte (subtrair crédito da conta de origem)
-      services.AddCreditToAccount(op.From, op.Amount)
-      // reverte as operações realizadas até o momento
-      rollbackOperations(tr)
-      return err
-    }
-
-    // atualiza o status da operação para sucesso
-    storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusSuccess)
-  }
-  // atualiza o status da transação para sucesso
-  storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusSuccess)
-  return nil
-}
-```
-
-## Token Ring
-O Token Ring é um protocolo que utiliza um token para controlar o acesso a uma rede de computadores. O token é passado de nó em nó, garantindo que cada nó tenha a oportunidade de acessar a rede e realizar operações de forma ordenada e sem conflitos. O algoritmo de Token Ring é baseado em uma topologia em anel e amplamente utilizado em redes e computadores, sendo originalmente definido pelo padrão IEEE 802.5.
-
-No contexto do InterBank, o Token Ring é utilizado para garantir que cada banco tenha a oportunidade de acessar e atualizar as informações das contas de forma ordenada e sem conflitos. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando um banco possui o token, ele pode realizar operações de leitura e escrita nos dados armazenados. Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele.
-
-## Concorrência distribuída
-O uso do Token Ring garante que apenas um banco terá acesso a rede por vez, impedindo que ocorram conflitos entre os bancos. Assim, mesmo com diferentes transações sendo criadas na rede ao mesmo tempo, apenas um banco poderá processar as suas transações locais por vez. Além disso, como cada banco possui sua fila local e processa apenas uma transação por vez, é garantido que as transações sejam realizadas de forma ordenada e sem conflitos.
-
-Desse modo, as operações são realizada uma de cada vez e na ordem em que foram adicionadas na fila, garantindo que o saldo final da conta seja consistente e sem duplicação de dados. Além disso, devido a natureza atômica das transações, até as transações que falharam são processadas de forma consistente.
-
-### Transações simultâneas
-Garantir que diferentes usuários possam realizar transações simultâneas é um dos principais desafios de um sistema distribuído. Com o método de Token Ring, é possível garantir que as transações sejam realizadas de forma ordenada e sem conflitos, mesmo que diferentes usuários estejam realizando transações ao mesmo tempo.
-
-Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele. Para garantir que as operações sejam realizadas de forma ordenada e sem conflitos, foi implementado um mecanismo de fila de transações. Assim que uma transação é criada, ela é adicionada na fila de transações do banco. Quando o banco possui o token, ele processa as transações da fila, uma de cada vez e na ordem em que foram adicionadas. Isso garante que as transações sejam realizadas de forma ordenada e sem conflitos.
-
-Desse modo, mesmo que diferentes transações que afetem o mesmo usuário sejam criadas no mesmo banco (ou em outros bancos), elas são processadas de forma ordenada e sem conflitos. Isso garante que as transações sejam realizadas de forma consistente e sem duplicação de dados.
-
-### Estrutura do Token
-O [token](bank/internal/token/token.go)  é um objeto que é passado de banco em banco, permitindo que cada banco tenha a oportunidade de acessar e atualizar as informações das contas. O token é composto por um campo `owner`, que indica quem é o dono do token, e um campo `ts`, que indica a data e hora em que o token foi criado.
-
-Assim que o banco detentor do token termina de processar as transações, ele atualiza o token com o ID do novo dono e com a hora atual. O token é então passado para o próximo banco, que por sua vez atualiza o token e passa para o próximo banco, e assim por diante. Esse processo é repetido indefinidamente, garantindo que cada banco tenha a oportunidade de acessar e atualizar as informações das contas.
-
-```go
-// Código de bank/internal/token/token.go
-type Token struct {
-   Owner int interbank.BankId // ID do banco que é dono do token
-   Ts    time.Time          // Data e hora em que o token foi criado
-}
-```
-
-### Estrutura do Token Ring
-O [Token Ring](bank/internal/storage/ring.go) é composto por um conjunto de bancos (nós) que se comunicam entre si para realizar transações financeiras de forma segura e eficiente. Cada banco possui um ID único, que é utilizado para determinar a ordem em que os bancos acessam e atualizam as informações das contas. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos.
-
-Todos os bancos do consórcio são definidos com antecedência e cada banco possui um ID único. O ID é utilizado para determinar a ordem em que os bancos acessam e atualizam as informações das contas. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos.
-
-```go
-// Código de bank/internal/storage/ring.go
-type ringData struct {
-   Id   interbank.BankId
-   Addr string
-}
-
-// implementação de um token ring para
-// comunicação entre os bancos
-type ringStorage struct {
-   mu   sync.RWMutex
-   ring []ringData
-}
-```
-
-### Inicialização do Token Ring
-Quando o sistema é iniciado, o banco com ID mais baixo é o responsável por criar o token e passá-lo para o próximo banco. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando o token chega no último banco, ele é passado de volta para o primeiro banco, fechando o anel. Esse processo é repetido indefinidamente, garantindo que cada banco tenha a oportunidade de acessar e atualizar as informações das contas de forma ordenada e sem conflitos. O código a seguir demonstra como o token é passado de banco em banco.
-
-```go
-// código de bank/internal/services/token_ring.go
-// Se o banco atual é o banco com menor ID
-if storage.Ring.FindBankWithLowestId().Id == config.Env.BankId {
-// verifica se o token já esta na rede.
-if !services.IsTokenOnRing() {
-   // se não estiver, cria o token
-   services.BroadcastToken(config.Env.BankId)
-}
-}
-```
-
-### Passagem do Token
-Quando um banco possui o token, ele pode realizar operações de leitura e escrita nos dados armazenados. Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele. Assim que o banco termina de processar as transações, ele passa o token para o próximo banco. Caso o próximo banco não esteja disponível, ele tentará enviar para o próximo banco, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual.
-
-O código abaixo demonstra como a passagem do token é realizada. O banco verifica se o próximo banco está disponível e, caso esteja, ele passa o token para ele. Caso contrário, ele tenta passar para o próximo banco, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual.
-```go
-// código de bank/internal/transaction_processor/processor.go
-// Verifica se o banco possui o token (localmente)
-if storage.Token.HasToken() {
-   // Em seguida, ele pergunta a rede quem é o dono do token
-   // É feita essa segunda verificação para garantir que o token não foi perdido
-   bank := services.AskBankWithToken()
-   if bank != nil && bank.Owner != storage.Token.Get().Owner {
-      // Se o banco atual não for o real dono do Token, ele atualiza o token internamente
-      storage.Token.Set(*bank)
-      continue
-   }
-
-   // se o banco atual for o dono do token, ele processa as transações localmente
-   processLocalTransactions()
-   // em seguida, ele passa o token para o próximo banco
-   services.PassToken()
-}
-```
-
-### Detecção e recuperação de falhas
-Um dos principais problemas da utilização do método de Token Ring é a possibilidade de falhas. Caso um banco que possua o token caia, o token é perdido e as transações não podem ser realizadas. Para resolver esse problema, foi implementado um mecanismo de detecção e recuperação de falhas.
-
-Por exemplo, quando o banco que detém termina de processar as transações, ele passa o token para o próximo banco. Caso o próximo banco não esteja disponível, ele tentará enviar para o próximo banco, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual.
-
-Para garantir que não ocorra duplicação de tokens, antes de iniciar o processamento das transações, o banco envia um multicast para todos os bancos do consórcio, perguntando quem é o dono do token. Caso o banco seja o dono do token, ele inicia o processamento das transações. Caso contrário, ele atualiza as informações internas sobre quem é o dono do token.
-
-Além disso, foi implementado um mecanismo de timeout para garantir que o token seja passado de banco em banco. Caso o banco que detém o token não passe o token para o próximo banco em um determinado tempo, o token é considerado perdido e o próximo banco assume a responsabilidade de criar um novo token e avisar a todos que ele é agora o novo detentor do token. Para isso, o próximo banco utiliza o horário de criação do token (estrutura `Ts` do [Token](#estrutura-do-token)) como referência para verificar se o token foi perdido. Caso a diferença entre o horário atual e o horário de criação do token seja maior que um determinado tempo, o token é considerado perdido e o próximo banco assume a responsabilidade de criar um novo token. Isso garante que o token continue circulando entre os bancos, mesmo em caso de falhas.
 
 ## Testes
 Para garantir que o sistema de consórcio bancário funcione corretamente, foram implementados testes unitários e de integração. Os testes unitários são utilizados para testar funções específicas do código, enquanto os testes de integração são utilizados para testar a integração entre diferentes componentes do sistema.

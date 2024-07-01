@@ -19,17 +19,17 @@ type TransactionId = uuid.UUID
 
 type Transaction struct {
 	Id         TransactionId     `json:"id"`
-	Author     interbank.IBK     `json:"author"`
+	Owner      interbank.IBK     `json:"owner"`
 	Operations []Operation       `json:"operations"`
 	CreatedAt  time.Time         `json:"created_at"`
 	UpdatedAt  time.Time         `json:"updated_at"`
 	Status     TransactionStatus `json:"status"`
 }
 
-func NewTransaction(author interbank.IBK, operations []Operation) *Transaction {
+func NewTransaction(owner interbank.IBK, operations []Operation) *Transaction {
 	return &Transaction{
 		Id:         uuid.New(),
-		Author:     author,
+		Owner:      owner,
 		Operations: operations,
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),

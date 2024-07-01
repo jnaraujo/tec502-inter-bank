@@ -9,14 +9,17 @@ import (
 func RegisterInterBankRoutes(app *fiber.App) {
 	router := app.Group("/interbank")
 
-	router.Post("/add-credit", interbank.AddCreditRoute)
-	router.Post("/sub-credit", interbank.SubCreditRoute)
 	router.Get("/account/:document", interbank.FindAccountRoute)
 	router.Get("/account/ibk/:ibk", interbank.FindAccountIBKRoute)
 
 	router.Put("/token", interbank.SetToken)
 	router.Get("/token", interbank.GetToken)
 	router.Get("/token/ok", interbank.CanReceiveToken)
+
+	// Transações
+	router.Post("/prepare", interbank.PrepareRoute)
+	router.Post("/rollback", interbank.RollbackRoute)
+	router.Post("/commit", interbank.CommitRoute)
 }
 
 func RegisterBankRoutes(app *fiber.App) {

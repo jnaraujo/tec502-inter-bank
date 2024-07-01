@@ -16,11 +16,13 @@ const (
 )
 
 type Account struct {
-	Id           int             `json:"id"`
-	Name         string          `json:"name"`
-	Documents    []string        `json:"documents"`
-	Type         AccountType     `json:"type"`
-	InterBankKey interbank.IBK   `json:"ibk"`
-	CreatedAt    time.Time       `json:"created_at"`
-	Balance      decimal.Decimal `json:"balance"`
+	Id             int             `json:"id"`
+	Name           string          `json:"name"`
+	Documents      []string        `json:"documents"`
+	Type           AccountType     `json:"type"`
+	InterBankKey   interbank.IBK   `json:"ibk"`
+	CreatedAt      time.Time       `json:"created_at"`
+	Balance        decimal.Decimal `json:"balance"`
+	PendingBalance decimal.Decimal `json:"-"`
+	BlockedBalance decimal.Decimal `json:"-"`
 }

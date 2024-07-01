@@ -8,13 +8,12 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"os"
 
+	"github.com/google/uuid"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/constants"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/models"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
-	"github.com/shopspring/decimal"
 )
 
 func FindAllUserAccountsInterBank(document string) []models.Account {
@@ -83,19 +82,146 @@ func FindAccountInterBank(ibk interbank.IBK) *models.Account {
 	return &acc
 }
 
-func SubCreditFromAccount(from interbank.IBK, amount decimal.Decimal) error {
+type txProcess struct {
+	Tx   *models.Transaction
+	Step Step
+}
+
+func ProcessTransaction(tr models.Transaction) error {
+	externalTransactions := []txProcess{}
+
+	isSuccess := true
+	for _, op := range tr.Operations {
+		txDebit := Prepare(op, StepDebit)
+		if txDebit == nil {
+			isSuccess = false
+			break
+		}
+		externalTransactions = append(externalTransactions, txProcess{Tx: txDebit, Step: StepDebit})
+
+		txCredit := Prepare(op, StepCredit)
+		if txCredit == nil {
+			isSuccess = false
+			break
+		}
+		externalTransactions = append(externalTransactions, txProcess{Tx: txCredit, Step: StepCredit})
+	}
+
+	if !isSuccess {
+		slog.Warn("Erro em alguma das transações")
+		// se ocorreu algum erro, as transações ja feitas devem sofrer rollback
+		for _, tx := range externalTransactions {
+			Rollback(tx.Tx.Id, tx.Tx.Operations[0], tx.Step)
+		}
+
+		for _, op := range tr.Operations {
+			storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusFailed)
+		}
+		storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusFailed)
+
+		return errors.New("transaction failed")
+	}
+
+	// se tudo estiver correto, as transações são confirmadas
+	for _, tx := range externalTransactions {
+		ok := Commit(tx.Tx.Id, tx.Tx.Operations[0], tx.Step)
+		if !ok {
+			isSuccess = false
+			break
+		}
+	}
+
+	// se ocorreu algum erro, as transações ja feitas devem sofrer rollback
+	// mesmo as que tiveram sucesso
+	if !isSuccess {
+		slog.Warn("Erro em alguma das transações na confirmação")
+		for _, tx := range externalTransactions {
+			Rollback(tx.Tx.Id, tx.Tx.Operations[0], tx.Step)
+		}
+
+		for _, op := range tr.Operations {
+			storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusFailed)
+		}
+		storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusFailed)
+
+		return errors.New("transaction failed")
+	}
+
+	for _, op := range tr.Operations {
+		storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusSuccess)
+	}
+	storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusSuccess)
+
+	return nil
+}
+
+type Step string
+
+const (
+	StepCredit Step = "credit"
+	StepDebit  Step = "debit"
+)
+
+func Prepare(op models.Operation, step Step) *models.Transaction {
+	reqBody, _ := json.Marshal(map[string]any{
+		"operation": map[string]string{
+			"from":   op.From.String(),
+			"to":     op.To.String(),
+			"amount": op.Amount.String(),
+		},
+		"step": step,
+	})
+
+	url := "http://localhost:300%d/interbank/prepare"
+	if step == StepDebit {
+		url = fmt.Sprintf(url, op.From.BankId)
+	} else {
+		url = fmt.Sprintf(url, op.To.BankId)
+	}
+
 	client := http.Client{
 		Timeout: constants.OperationTimeout,
 	}
+	resp, err := client.Post(url, "application/json", bytes.NewBuffer(reqBody))
+	if err != nil {
+		slog.Error(err.Error())
+		return nil
+	}
 
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		slog.Error("Error preparing transaction", "status", resp.StatusCode, "body", string(body))
+		return nil
+	}
+
+	var response models.Transaction
+	json.Unmarshal(body, &response)
+
+	return &response
+}
+
+func Rollback(txId uuid.UUID, op models.Operation, step Step) bool {
 	reqBody, _ := json.Marshal(map[string]string{
-		"from":   from.String(),
-		"amount": amount.String(),
+		"tx_id": txId.String(),
+		"step":  string(step),
 	})
 
-	resp, err := client.Post(fmt.Sprintf("http://localhost:300%d/interbank/sub-credit", from.BankId), "application/json", bytes.NewBuffer(reqBody))
+	url := "http://localhost:300%d/interbank/rollback"
+	if step == StepDebit {
+		url = fmt.Sprintf(url, op.From.BankId)
+	} else {
+		url = fmt.Sprintf(url, op.To.BankId)
+	}
+
+	client := http.Client{
+		Timeout: constants.OperationTimeout,
+	}
+	resp, err := client.Post(url, "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
-		return errors.New("bank is offline")
+		slog.Error(err.Error())
+		return false
 	}
 
 	body, _ := io.ReadAll(resp.Body)
@@ -104,82 +230,36 @@ func SubCreditFromAccount(from interbank.IBK, amount decimal.Decimal) error {
 	var response map[string]string
 	json.Unmarshal(body, &response)
 
-	if resp.StatusCode != http.StatusOK {
-		return errors.New(response["message"])
-	}
-
-	return nil
+	return resp.StatusCode == http.StatusOK
 }
 
-func AddCreditToAccount(to interbank.IBK, amount decimal.Decimal) error {
+func Commit(txId uuid.UUID, op models.Operation, step Step) bool {
+	reqBody, _ := json.Marshal(map[string]string{
+		"tx_id": txId.String(),
+		"step":  string(step),
+	})
+
+	url := "http://localhost:300%d/interbank/commit"
+	if step == StepDebit {
+		url = fmt.Sprintf(url, op.From.BankId)
+	} else {
+		url = fmt.Sprintf(url, op.To.BankId)
+	}
+
 	client := http.Client{
 		Timeout: constants.OperationTimeout,
 	}
-
-	reqBody, _ := json.Marshal(map[string]string{
-		"to":     to.String(),
-		"amount": amount.String(),
-	})
-
-	resp, err := client.Post(fmt.Sprintf("http://localhost:300%d/interbank/add-credit", to.BankId), "application/json", bytes.NewBuffer(reqBody))
+	resp, err := client.Post(url, "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
-		if os.IsTimeout(err) {
-			slog.Error("Timeout")
-		}
-
-		return errors.New("bank is offline")
+		slog.Error(err.Error())
+		return false
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	resp.Body.Close()
-	if err != nil {
-		return errors.New("bank is offline")
-	}
 
 	var response map[string]string
 	json.Unmarshal(body, &response)
 
-	if resp.StatusCode != http.StatusOK {
-		return errors.New(response["message"])
-	}
-
-	return nil
-}
-
-func ProcessTransaction(tr models.Transaction) error {
-	for _, op := range tr.Operations {
-		err := SubCreditFromAccount(op.From, op.Amount)
-		if err != nil {
-			RollbackOperations(tr)
-			return err
-		}
-
-		err = AddCreditToAccount(op.To, op.Amount)
-		if err != nil {
-			// como falou na segunda parte, reverte a primeira parte
-			AddCreditToAccount(op.From, op.Amount)
-			RollbackOperations(tr)
-			return err
-		}
-
-		storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusSuccess)
-	}
-
-	storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusSuccess)
-
-	return nil
-}
-
-func RollbackOperations(tr models.Transaction) {
-	for _, op := range tr.Operations {
-		// so precisa reverter as que tiveram sucesso
-		if op.Status == models.OperationStatusSuccess {
-			SubCreditFromAccount(op.To, op.Amount)
-			AddCreditToAccount(op.From, op.Amount)
-		}
-
-		storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusFailed)
-	}
-
-	storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusFailed)
+	return resp.StatusCode == http.StatusOK
 }

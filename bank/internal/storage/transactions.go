@@ -52,7 +52,7 @@ func (ts *transactionsStorage) FindUserTransactionsById(userId int) []models.Tra
 
 	ts.mu.RLock()
 	for _, t := range ts.data {
-		if t.Author == user.InterBankKey {
+		if t.Owner == user.InterBankKey {
 			transactions = append(transactions, t)
 		}
 	}
@@ -78,7 +78,7 @@ func (ts *transactionsStorage) UpdateOperationStatus(t models.Transaction, op mo
 	return found
 }
 
-func (ts *transactionsStorage) UpdateTransactionStatus(t models.Transaction, s models.TransactionStatus) models.Transaction {
+func (ts *transactionsStorage) UpdateTransactionStatus(t models.Transaction, s models.TransactionStatus) *models.Transaction {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
@@ -86,7 +86,7 @@ func (ts *transactionsStorage) UpdateTransactionStatus(t models.Transaction, s m
 	t.Status = s
 	ts.data[t.Id] = t
 
-	return t
+	return &t
 }
 
 func (ts *transactionsStorage) FindTransactionById(id uuid.UUID) *models.Transaction {
