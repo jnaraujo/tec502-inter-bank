@@ -1,6 +1,13 @@
+import { Footer } from "@/components/footer"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/contexts/auth-context"
-import { createRootRoute, Outlet } from "@tanstack/react-router"
+import { useBank } from "@/stores/bank-store"
+import {
+  createRootRoute,
+  Navigate,
+  Outlet,
+  useLocation,
+} from "@tanstack/react-router"
 import React from "react"
 
 const TanStackRouterDevtools =
@@ -16,15 +23,27 @@ const TanStackRouterDevtools =
       )
 
 export const Route = createRootRoute({
-  component: () => (
+  component: Root,
+})
+
+function Root() {
+  const { address } = useBank()
+  const location = useLocation()
+
+  if (location.pathname != "/" && !address) {
+    return <Navigate to="/" />
+  }
+
+  return (
     <>
-      <div className="flex min-h-[100svh] flex-col bg-muted font-sans">
+      <div className=" flex h-[100svh] flex-col justify-between gap-6 overflow-auto bg-muted p-6 font-sans">
         <AuthProvider>
           <Outlet />
+          <Footer />
         </AuthProvider>
       </div>
       <TanStackRouterDevtools />
       <Toaster />
     </>
-  ),
-})
+  )
+}

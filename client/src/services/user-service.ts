@@ -1,8 +1,9 @@
 import { User } from "@/@types/user"
-import { env } from "@/env"
+import { useBank } from "@/stores/bank-store"
 
 export async function auth(ibk: string) {
-  const response = await fetch(`${env.VITE_BANK_URL}/api/accounts/auth`, {
+  const address = useBank.getState().address
+  const response = await fetch(`${address}/api/accounts/auth`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -34,7 +35,8 @@ interface CreateAccountUser {
 }
 
 export async function createAccount(account: CreateAccountUser) {
-  const response = await fetch(`${env.VITE_BANK_URL}/api/accounts`, {
+  const address = useBank.getState().address
+  const response = await fetch(`${address}/api/accounts`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

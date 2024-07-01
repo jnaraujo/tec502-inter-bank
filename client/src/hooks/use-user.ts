@@ -1,10 +1,10 @@
 import { BALANCE_REFETCH_INTERVAL } from "@/constants/query"
-import { env } from "@/env"
+import { useBank } from "@/stores/bank-store"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 export function useBalance(userId?: number) {
   return useQuery({
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       if (!userId) {
         return {
           balance: 0,
@@ -12,8 +12,10 @@ export function useBalance(userId?: number) {
         }
       }
 
-      const resp = await fetch(`${env.VITE_BANK_URL}/api/accounts/${userId}`)
-
+      const address = useBank.getState().address
+      const resp = await fetch(`${address}/api/accounts/${userId}`, {
+        signal,
+      })
       if (!resp.ok) {
         throw new Error("Não foi possível pegar os dados do usuário.")
       }
@@ -42,19 +44,17 @@ export function useDeposit() {
 
   return useMutation({
     mutationFn: async (data: DepositData) => {
-      const response = await fetch(
-        `${env.VITE_BANK_URL}/api/payments/deposit`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            acc_ibk: data.userIBK,
-            amount: data.amount,
-          }),
+      const address = useBank.getState().address
+      const response = await fetch(`${address}/api/payments/deposit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      )
+        body: JSON.stringify({
+          acc_ibk: data.userIBK,
+          amount: data.amount,
+        }),
+      })
 
       if (!response.ok) {
         throw new Error(

@@ -116,6 +116,7 @@ client
 │   ├── components # Componentes React reutilizáveis
 │   ├── constants # Definem valores constantes, como o tempo de atualização do saldo
 │   ├── contexts # Contextos são utilizados para compartilhar informações entre componentes de forma global
+|   ├── stores # Stores são utilizadas para gerenciar o estado da aplicação
 │   ├── hooks # Hooks são funções que permitem adicionar funcionalidades ao componente
 │   ├── lib # Funções utilitárias
 │   ├── routes # Definição das rotas da aplicação

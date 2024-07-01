@@ -72,7 +72,7 @@ export function TransferBox() {
 
   return (
     <>
-      <article className="space-y-4 rounded-lg border bg-background p-6">
+      <article className="flex flex-col space-y-4 overflow-auto rounded-lg border bg-background p-6">
         <h2 className="text-lg font-medium text-zinc-800">
           Realizar transferência
         </h2>
@@ -81,12 +81,15 @@ export function TransferBox() {
           todas são desfeitas.
         </p>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form
+          className="flex flex-1 flex-col space-y-4"
+          onSubmit={handleSubmit}
+        >
           <h3 className="font-medium text-zinc-600">
             Operações da transferência
           </h3>
-          <div>
-            <div className="h-64 space-y-2 overflow-y-auto overflow-x-hidden px-4">
+          <div className="flex flex-1 flex-col">
+            <div className="max-h-60 flex-1 space-y-2 overflow-y-auto overflow-x-hidden px-4">
               {operations.length === 0 ? (
                 <p className="p-6 text-center text-sm text-zinc-500">
                   Sem operações ainda. Adicione uma nova operação para aparecer

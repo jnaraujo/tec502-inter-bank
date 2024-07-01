@@ -1,5 +1,5 @@
 import { TRANSACTIONS_REFETCH_INTERVAL } from "@/constants/query"
-import { env } from "@/env"
+import { useBank } from "@/stores/bank-store"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 export interface Operation {
@@ -25,13 +25,17 @@ export interface Transaction {
 
 export function useTransactions(userId?: number) {
   return useQuery({
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       if (!userId) {
         return []
       }
 
+      const address = useBank.getState().address
       const resp = await fetch(
-        `${env.VITE_BANK_URL}/api/accounts/${userId}/transactions`,
+        `${address}/api/accounts/${userId}/transactions`,
+        {
+          signal,
+        },
       )
 
       if (!resp.ok) {
@@ -60,7 +64,8 @@ export function useSendTransaction() {
 
   return useMutation({
     mutationFn: async (transaction: NewTransaction) => {
-      const response = await fetch(`${env.VITE_BANK_URL}/api/payments/pay`, {
+      const address = useBank.getState().address
+      const response = await fetch(`${address}/api/payments/pay`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
