@@ -16,6 +16,7 @@ export function TransactionListBox() {
             key={tr.id}
             createdAt={tr.created_at}
             status={tr.status as any}
+            type={tr.type}
             operations={tr.operations.map((op) => ({
               amount: Number(op.amount),
               from: op.from,

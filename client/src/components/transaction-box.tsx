@@ -19,6 +19,7 @@ interface Operation {
 interface Props {
   createdAt: string
   status: TransactionStatus
+  type: "final" | "package"
   operations: Array<Operation>
 }
 
@@ -54,7 +55,10 @@ export function TransactionBox(props: Props) {
             "text-zinc-500": props.status === "pending",
           })}
         >
-          {getLabel()}
+          {getLabel()} -{" "}
+          {props.type == "package"
+            ? "(Pacote de transações)"
+            : "(Transação final)"}
         </h3>
 
         <div>

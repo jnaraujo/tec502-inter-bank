@@ -39,6 +39,7 @@ func (ts *transactionsStorage) CreateDepositTransaction(author interbank.IBK, am
 	transaction := *models.NewTransaction(
 		author,
 		[]models.Operation{operation},
+		models.TransactionTypeFinal,
 	)
 	ts.data[transaction.Id] = transaction
 

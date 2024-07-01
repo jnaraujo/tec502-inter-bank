@@ -15,18 +15,26 @@ const (
 	TransactionStatusFailed  TransactionStatus = "failed"
 )
 
+type TransactionType string
+
+const (
+	TransactionTypePackage TransactionType = "package" // representa um pacote de operações
+	TransactionTypeFinal   TransactionType = "final"   // representa uma operação final
+)
+
 type TransactionId = uuid.UUID
 
 type Transaction struct {
 	Id         TransactionId     `json:"id"`
 	Owner      interbank.IBK     `json:"owner"`
+	Type       TransactionType   `json:"type"`
 	Operations []Operation       `json:"operations"`
 	CreatedAt  time.Time         `json:"created_at"`
 	UpdatedAt  time.Time         `json:"updated_at"`
 	Status     TransactionStatus `json:"status"`
 }
 
-func NewTransaction(owner interbank.IBK, operations []Operation) *Transaction {
+func NewTransaction(owner interbank.IBK, operations []Operation, trType TransactionType) *Transaction {
 	return &Transaction{
 		Id:         uuid.New(),
 		Owner:      owner,
@@ -34,6 +42,7 @@ func NewTransaction(owner interbank.IBK, operations []Operation) *Transaction {
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
 		Status:     TransactionStatusPending,
+		Type:       trType,
 	}
 }
 

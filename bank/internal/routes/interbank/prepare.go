@@ -48,7 +48,7 @@ func PrepareRoute(c *fiber.Ctx) error {
 
 		transaction = models.NewTransaction(body.Operation.From, []models.Operation{
 			*models.NewOperation(body.Operation.From, body.Operation.To, models.OperationTypeTransfer, body.Operation.Amount),
-		})
+		}, models.TransactionTypeFinal)
 	} else if body.Step == "credit" {
 		if toAcc == nil {
 			return c.Status(http.StatusBadRequest).JSON(&fiber.Map{
@@ -60,7 +60,7 @@ func PrepareRoute(c *fiber.Ctx) error {
 
 		transaction = models.NewTransaction(body.Operation.To, []models.Operation{
 			*models.NewOperation(body.Operation.From, body.Operation.To, models.OperationTypeTransfer, body.Operation.Amount),
-		})
+		}, models.TransactionTypeFinal)
 	}
 
 	storage.Transactions.Save(*transaction)

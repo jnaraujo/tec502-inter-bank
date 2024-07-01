@@ -20,6 +20,7 @@ export interface Transaction {
   created_at: string
   updated_at: string
   status: string
+  type: "package" | "final"
 }
 
 export function useTransactions(userId?: number) {
