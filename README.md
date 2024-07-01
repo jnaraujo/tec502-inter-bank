@@ -124,7 +124,7 @@ Para criar uma nova conta, preencha o formulário com o nome do usuário, os doc
 Para realizar um depósito, preencha o formulário o valor a ser depositado e clique no botão "Fazer depósito". Após realizar o depósito, você verá o novo saldo da conta.
 
 #### Como visualizar o saldo de uma conta
-<div>
+<div align="center">
 <img src="./images/view-balance.png" alt="Visualizar saldo da conta" height="300px" width="auto" /> <br/>
 <em>Figura 4. Visualizar saldo da conta</em>
 </div>
@@ -132,7 +132,7 @@ Para realizar um depósito, preencha o formulário o valor a ser depositado e cl
 Para visualizar o saldo de uma conta, basta verificar na caixa "Seu saldo" o valor atual da conta. O saldo é atualizado de tempos em tempos, garantindo que as informações estejam sempre atualizadas.
 
 #### Como realizar uma transferência
-<div>
+<div align="center">
 <img src="./images/create-transaction.png" alt="Criar transação" height="300px" width="auto" /> <br/>
 <em>Figura 5. Criar transação</em>
 </div>
@@ -140,7 +140,7 @@ Para visualizar o saldo de uma conta, basta verificar na caixa "Seu saldo" o val
 Para realizar uma transferência, adicione uma nova operação clicando no botão "Adicionar nova operação". Em seguida, preencha o formulário. Após adicionar todas as operações, clique no botão "Realizar transferência".
 
 #### Como adicionar uma nova operação
-<div>
+<div align="center">
 <img src="./images/add-new-operation.png" alt="Adicionar nova operação" height="300px" width="auto" /> <br/>
 <em>Figura 6. Adicionar nova operação</em>
 </div>
@@ -148,7 +148,7 @@ Para realizar uma transferência, adicione uma nova operação clicando no botã
 Para criar uma nova operação, preencha o formulário com o IBK do pagador, o IBK do beneficiário e o valor a ser transferido e clique no botão "Adicionar operação".
 
 #### Como visualizar o extrato de uma conta
-<div>
+<div align="center">
 <img src="./images/transaction-list.png" alt="Visualizar extrato da conta" height="300px" width="auto" /> <br/>
 <em>Figura 7. Visualizar extrato da conta</em>
 </div>
