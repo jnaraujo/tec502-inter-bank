@@ -171,7 +171,7 @@ Exemplo de resposta:
   "id": 1,
   "name": "José da Silva",
   "documents": [
-    "000.000.000-02"
+    "000.000.000-01"
   ],
   "type": "individual",
   "ibk": "1-1",
@@ -186,7 +186,7 @@ POST /api/accounts
 
 {
   "name": "João e Maria da Silva",
-  "documents": ["000.000.000-01", "000.000.000-02"],
+  "documents": ["000.000.000-01", "000.000.000-01"],
   "type": "joint"
 }
 ```
@@ -211,7 +211,7 @@ Exemplo de resposta:
   "id": 1,
   "name": "José da Silva",
   "documents": [
-    "000.000.000-02"
+    "000.000.000-01"
   ],
   "type": "individual",
   "ibk": "1-1",
@@ -300,7 +300,7 @@ Exemplo de resposta:
   "id": 1,
   "name": "José da Silva",
   "documents": [
-    "000.000.000-02"
+  "000.000.000-01"
   ],
   "type": "individual",
   "ibk": "1-1",
@@ -326,7 +326,7 @@ Exemplo de resposta:
     "id": 1,
     "name": "José da Silva",
     "documents": [
-      "000.000.000-02"
+      "000.000.000-01"
     ],
     "type": "individual",
     "ibk": "1-1",
@@ -337,7 +337,7 @@ Exemplo de resposta:
     "id": 1,
     "name": "José da Silva",
     "documents": [
-      "000.000.000-02"
+      "000.000.000-01"
     ],
     "type": "individual",
     "ibk": "2-1",
@@ -533,7 +533,7 @@ Exemplo de resposta:
     "id": 1,
     "name": "José da Silva",
     "documents": [
-      "000.000.000-02"
+      "000.000.000-01"
     ],
     "type": "individual",
     "ibk": "1-1",
@@ -559,7 +559,7 @@ Exemplo de resposta:
   "id": 1,
   "name": "José da Silva",
   "documents": [
-    "000.000.000-02"
+    "000.000.000-01"
   ],
   "type": "individual",
   "ibk": "1-1",
