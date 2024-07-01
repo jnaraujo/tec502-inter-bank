@@ -44,13 +44,10 @@ export async function createAccount(account: CreateAccountUser) {
     body: JSON.stringify(account),
   })
 
-  if (response.status == 409) {
-    throw new Error("Usuário já existe")
+  if (!response.ok) {
+    throw new Error((await response.json()).message)
   }
 
-  if (!response.ok) {
-    throw new Error("Failed to signup user")
-  }
   const res = await response.json()
   return {
     id: res.id,

@@ -115,6 +115,13 @@ Para definir o endereço do banco, escreva o endereço do banco no campo de text
 
 Para criar uma nova conta, preencha o formulário com o nome do usuário, os documentos (CPF ou CNPJ) e o tipo da conta (pessoa física, jurídica ou conjunta) e clique no botão "Criar conta". Após criar a conta, você será redirecionado para a página do banco.
 
+<div align="center">
+<img src="./images/create-joint-account.png" alt="Criar uma nova conta conjunta" height="300px" width="auto" /> <br/>
+<em>Figura 2. Criar uma nova conta conjunta</em>
+</div>
+
+Para criar uma conta conjunta, preencha o formulário com o nome da conta e os documentos dos usuários (CPF ou CNPJ) e clique no botão "Criar conta" (ambos os usuários devem ter uma conta individual previamente criada no banco). Após criar a conta, você será redirecionado para a página do banco.
+
 #### Como realizar um depósito
 <div align="center">
 <img src="./images/create-deposit.png" alt="Criar um novo depósito" height="300px" width="auto" /> <br/>

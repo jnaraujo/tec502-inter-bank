@@ -21,19 +21,51 @@ import {
   FormMessage,
 } from "./ui/form"
 import { Input } from "./ui/input"
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group"
 import { toast } from "./ui/use-toast"
 
-const formSchema = z.object({
-  name: z
-    .string()
-    .min(8, {
-      message: "O nome deve ter no mínimo 6 caracteres",
-    })
-    .max(255, {
-      message: "O nome deve ter no máximo 255 caracteres",
+const formSchema = z
+  .object({
+    type: z.enum(["individual", "legal", "joint"], {
+      required_error: "Selecione um tipo de conta",
     }),
-  document: z.string().min(4).max(16),
-})
+    name: z
+      .string()
+      .min(8, {
+        message: "O nome deve ter no mínimo 6 caracteres",
+      })
+      .max(255, {
+        message: "O nome deve ter no máximo 255 caracteres",
+      }),
+    document: z
+      .string()
+      .min(4, {
+        message: "O documento deve ter no mínimo 4 caracteres",
+      })
+      .max(16, {
+        message: "O documento deve ter no máximo 16 caracteres",
+      }),
+    secondDocument: z
+      .string()
+      .min(4, {
+        message: "O documento deve ter no mínimo 4 caracteres",
+      })
+      .max(16, {
+        message: "O documento deve ter no máximo 16 caracteres",
+      })
+      .optional()
+      .or(z.literal("")),
+  })
+  .refine(
+    (data) => {
+      if (data.type !== "joint") return true
+      return data.secondDocument !== ""
+    },
+    {
+      message: "O documento do segundo titular é obrigatório",
+      path: ["secondDocument"],
+    },
+  )
 
 export function SignUpForm() {
   const router = useRouter()
@@ -41,8 +73,10 @@ export function SignUpForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      type: "individual",
       name: "",
       document: "",
+      secondDocument: "",
     },
   })
 
@@ -50,8 +84,10 @@ export function SignUpForm() {
     try {
       await auth.signUp({
         name: data.name,
-        type: "individual",
-        documents: [data.document],
+        type: data.type,
+        documents: [data.document, data.secondDocument].filter(
+          Boolean,
+        ) as string[],
       })
       router.navigate({
         to: "/dashboard",
@@ -79,10 +115,55 @@ export function SignUpForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de conta</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex justify-between"
+                    >
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="individual" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Individual
+                        </FormLabel>
+                      </FormItem>
+
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="legal" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Legal</FormLabel>
+                      </FormItem>
+
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="joint" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Conjunta</FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome</FormLabel>
+                  <FormLabel>
+                    {form.getValues("type") === "joint"
+                      ? "Nome da conta conjunta"
+                      : "Nome do titular"}
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="Ex: John Doe" {...field} />
                   </FormControl>
@@ -103,6 +184,21 @@ export function SignUpForm() {
                 </FormItem>
               )}
             />
+            {form.getValues("type") === "joint" && (
+              <FormField
+                control={form.control}
+                name="secondDocument"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Documento do segundo titular</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: 123.456.789-99" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <Button type="submit">Cadastrar</Button>
           </form>
         </Form>
