@@ -45,7 +45,7 @@ Neste contexto, o método de Token Ring foi escolhido como a solução para reso
       - [POST /interbank/sub-credit](#post-interbanksub-credit)
         - [GET /account/:document](#get-accountdocument)
       - [POST /interbank/account/ibk/:ibk](#post-interbankaccountibkibk)
-      - [POST /interbank/token](#post-interbanktoken)
+      - [PUT /interbank/token](#put-interbanktoken)
       - [GET /interbank/token](#get-interbanktoken)
       - [GET /interbank/token/ok](#get-interbanktokenok)
 - [Sincronização dos dados internamente no banco](#sincronização-dos-dados-internamente-no-banco)
@@ -568,12 +568,12 @@ Exemplo de resposta:
 }
 ```
 
-##### POST /interbank/token
+##### PUT /interbank/token
 Esta [rota](/bank/internal/routes/interbank/set-token.go) é utilizada para enviar um token para um banco específico. Ela recebe um objeto JSON contendo o ID do banco que irá receber o token e a data de quando o token foi criado.
 
 Exemplo de requisição:
 ```http
-POST /interbank/token
+PUT /interbank/token
 
 {
   "to": 1,

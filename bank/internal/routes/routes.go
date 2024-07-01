@@ -14,7 +14,7 @@ func RegisterInterBankRoutes(app *fiber.App) {
 	router.Get("/account/:document", interbank.FindAccountRoute)
 	router.Get("/account/ibk/:ibk", interbank.FindAccountIBKRoute)
 
-	router.Post("/token", interbank.SetToken)
+	router.Put("/token", interbank.SetToken)
 	router.Get("/token", interbank.GetToken)
 	router.Get("/token/ok", interbank.CanReceiveToken)
 }

@@ -51,8 +51,11 @@ func BroadcastToken(id interbank.BankId) {
 		"to": id,
 		"ts": time.Now(),
 	})
+	client := &http.Client{}
 	for _, bank := range storage.Ring.List() {
-		http.Post("http://"+bank.Addr+"/interbank/token", "application/json", bytes.NewBuffer(body))
+		req, _ := http.NewRequest("PUT", "http://"+bank.Addr+"/interbank/token", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		client.Do(req)
 	}
 }
 
