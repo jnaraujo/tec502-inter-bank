@@ -117,7 +117,7 @@ Para criar uma nova conta, preencha o formulário com o nome do usuário, os doc
 
 <div align="center">
 <img src="./images/create-joint-account.png" alt="Criar uma nova conta conjunta" height="300px" width="auto" /> <br/>
-<em>Figura 2. Criar uma nova conta conjunta</em>
+<em>Figura 3. Criar uma nova conta conjunta</em>
 </div>
 
 Para criar uma conta conjunta, preencha o formulário com o nome da conta e os documentos dos usuários (CPF ou CNPJ) e clique no botão "Criar conta" (ambos os usuários devem ter uma conta individual previamente criada no banco). Após criar a conta, você será redirecionado para a página do banco.
@@ -125,7 +125,7 @@ Para criar uma conta conjunta, preencha o formulário com o nome da conta e os d
 #### Como realizar um depósito
 <div align="center">
 <img src="./images/create-deposit.png" alt="Criar um novo depósito" height="300px" width="auto" /> <br/>
-<em>Figura 3. Criar um novo depósito</em>
+<em>Figura 4. Criar um novo depósito</em>
 </div>
 
 Para realizar um depósito, preencha o formulário o valor a ser depositado e clique no botão "Fazer depósito". Após realizar o depósito, você verá o novo saldo da conta.
@@ -133,7 +133,7 @@ Para realizar um depósito, preencha o formulário o valor a ser depositado e cl
 #### Como visualizar o saldo de uma conta
 <div align="center">
 <img src="./images/view-balance.png" alt="Visualizar saldo da conta" height="300px" width="auto" /> <br/>
-<em>Figura 4. Visualizar saldo da conta</em>
+<em>Figura 5. Visualizar saldo da conta</em>
 </div>
 
 Para visualizar o saldo de uma conta, basta verificar na caixa "Seu saldo" o valor atual da conta. O saldo é atualizado de tempos em tempos, garantindo que as informações estejam sempre atualizadas.
@@ -141,7 +141,7 @@ Para visualizar o saldo de uma conta, basta verificar na caixa "Seu saldo" o val
 #### Como realizar uma transferência
 <div align="center">
 <img src="./images/create-transaction.png" alt="Criar transação" height="300px" width="auto" /> <br/>
-<em>Figura 5. Criar transação</em>
+<em>Figura 6. Criar transação</em>
 </div>
 
 Para realizar uma transferência, adicione uma nova operação clicando no botão "Adicionar nova operação". Em seguida, preencha o formulário. Após adicionar todas as operações, clique no botão "Realizar transferência".
@@ -149,7 +149,7 @@ Para realizar uma transferência, adicione uma nova operação clicando no botã
 #### Como adicionar uma nova operação
 <div align="center">
 <img src="./images/add-new-operation.png" alt="Adicionar nova operação" height="300px" width="auto" /> <br/>
-<em>Figura 6. Adicionar nova operação</em>
+<em>Figura 7. Adicionar nova operação</em>
 </div>
 
 Para criar uma nova operação, preencha o formulário com o IBK do pagador, o IBK do beneficiário e o valor a ser transferido e clique no botão "Adicionar operação".
@@ -157,7 +157,7 @@ Para criar uma nova operação, preencha o formulário com o IBK do pagador, o I
 #### Como visualizar o extrato de uma conta
 <div align="center">
 <img src="./images/transaction-list.png" alt="Visualizar extrato da conta" height="300px" width="auto" /> <br/>
-<em>Figura 7. Visualizar extrato da conta</em>
+<em>Figura 8. Visualizar extrato da conta</em>
 </div>
 
 Para visualizar o extrato de uma conta, basta verificar a lista de transações. O extrato é atualizado de tempos em tempos, garantindo que as informações estejam sempre atualizadas.
