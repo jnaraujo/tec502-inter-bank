@@ -55,7 +55,7 @@ Neste contexto, o método de Token Ring foi escolhido como a solução para reso
       - [POST /interbank/prepare](#post-interbankprepare)
       - [POST /interbank/rollback](#post-interbankrollback)
       - [POST /interbank/commit](#post-interbankcommit)
-        - [GET /account/:document](#get-accountdocument)
+      - [GET /account/:document](#get-accountdocument)
       - [POST /interbank/account/ibk/:ibk](#post-interbankaccountibkibk)
       - [PUT /interbank/token](#put-interbanktoken)
       - [GET /interbank/token](#get-interbanktoken)
@@ -761,7 +761,7 @@ Exemplo de resposta:
 },
 ```
 
-###### GET /account/:document
+##### GET /account/:document
 Esta rota é utilizada para buscar todas as contas que um banco possui associadas a um documento. Ela recebe o documento (CPF ou CNPJ) e o banco então retorna um objeto JSON contendo as contas associadas ao documento.
 
 Exemplo de requisição:
