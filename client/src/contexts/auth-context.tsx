@@ -15,7 +15,7 @@ interface ISignUp {
 }
 
 interface IAuthContext {
-  user: User | null
+  user: User | null | undefined
   isAuthenticated: boolean
   login: (data: ILogin) => Promise<void>
   signUp: (data: ISignUp) => Promise<void>
@@ -24,9 +24,9 @@ interface IAuthContext {
 export const AuthContext = createContext<IAuthContext>({} as IAuthContext)
 export const useAuth = () => useContext(AuthContext)
 
-function getUserFromCookies(): User | null {
+function getUserFromCookies(): User | null | undefined {
   const cookieData = Cookies.get("user")
-  if (!cookieData) return null
+  if (!cookieData) return undefined
   try {
     return JSON.parse(cookieData) as User
   } catch (error) {
@@ -36,7 +36,7 @@ function getUserFromCookies(): User | null {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(getUserFromCookies())
+  const [user, setUser] = useState<User | null | undefined>(undefined)
   const isAuthenticated = !!user
 
   async function login(data: ILogin) {
@@ -54,11 +54,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function tryAuth() {
       const userCookie = getUserFromCookies()
-      if (!userCookie) return
+      if (!userCookie) {
+        setUser(null)
+        return
+      }
       try {
-        await auth(userCookie.document)
+        await auth(userCookie.ibk)
+        setUser(userCookie)
       } catch (error) {
         Cookies.remove("user")
+        setUser(null)
       }
     }
     tryAuth()

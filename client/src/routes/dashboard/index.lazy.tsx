@@ -12,7 +12,8 @@ export const Route = createLazyFileRoute("/dashboard/")({
 function DashboardPage() {
   const { isAuthenticated, user } = useAuth()
 
-  if (!isAuthenticated || !user) {
+  if (user === undefined) return
+  if (!isAuthenticated) {
     return <Navigate to="/login" />
   }
 
