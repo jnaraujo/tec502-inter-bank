@@ -20,11 +20,13 @@ Neste contexto, o método de Token Ring foi escolhido como a solução para reso
   - [Tecnologias utilizadas](#tecnologias-utilizadas)
   - [Como executar o projeto?](#como-executar-o-projeto)
 - [Como utilizar?](#como-utilizar)
+    - [Como definir o Banco?](#como-definir-o-banco)
     - [Como criar de uma conta](#como-criar-de-uma-conta)
     - [Como realizar um depósito](#como-realizar-um-depósito)
-    - [Como realizar uma transferência](#como-realizar-uma-transferência)
-    - [Como visualizar o extrato de uma conta](#como-visualizar-o-extrato-de-uma-conta)
     - [Como visualizar o saldo de uma conta](#como-visualizar-o-saldo-de-uma-conta)
+    - [Como realizar uma transferência](#como-realizar-uma-transferência)
+    - [Como adicionar uma nova operação](#como-adicionar-uma-nova-operação)
+    - [Como visualizar o extrato de uma conta](#como-visualizar-o-extrato-de-uma-conta)
 - [Arquitetura do projeto](#arquitetura-do-projeto)
   - [Interface gráfica](#interface-gráfica)
   - [Código do banco](#código-do-banco)
@@ -97,11 +99,61 @@ docker-compose up --build
 4. Acesse o endereço `http://localhost:3000` no seu navegador para acessar a interface do cliente.
 
 ## Como utilizar?
+#### Como definir o Banco?
+<div align="center">
+<img src="./images/set-address.png" alt="Definir endereço do banco" height="300px" width="auto" /> <br/>
+<em>Figura 1. Definir endereço do banco</em>
+</div>
+
+Para definir o endereço do banco, escreva o endereço do banco no campo de texto e clique no botão "Acessar banco". O endereço do banco é utilizado para realizar a comunicação entre os bancos do consórcio. Após definir o endereço do banco, você será redirecionado para a página de login.
+
 #### Como criar de uma conta
+<div align="center">
+<img src="./images/create-account.png" alt="Criar uma nova conta" height="300px" width="auto" /> <br/>
+<em>Figura 2. Criar uma nova conta</em>
+</div>
+
+Para criar uma nova conta, preencha o formulário com o nome do usuário, os documentos (CPF ou CNPJ) e o tipo da conta (pessoa física, jurídica ou conjunta) e clique no botão "Criar conta". Após criar a conta, você será redirecionado para a página do banco.
+
 #### Como realizar um depósito
-#### Como realizar uma transferência
-#### Como visualizar o extrato de uma conta
+<div align="center">
+<img src="./images/create-deposit.png" alt="Criar um novo depósito" height="300px" width="auto" /> <br/>
+<em>Figura 3. Criar um novo depósito</em>
+</div>
+
+Para realizar um depósito, preencha o formulário o valor a ser depositado e clique no botão "Fazer depósito". Após realizar o depósito, você verá o novo saldo da conta.
+
 #### Como visualizar o saldo de uma conta
+<div>
+<img src="./images/view-balance.png" alt="Visualizar saldo da conta" height="300px" width="auto" /> <br/>
+<em>Figura 4. Visualizar saldo da conta</em>
+</div>
+
+Para visualizar o saldo de uma conta, basta verificar na caixa "Seu saldo" o valor atual da conta. O saldo é atualizado de tempos em tempos, garantindo que as informações estejam sempre atualizadas.
+
+#### Como realizar uma transferência
+<div>
+<img src="./images/create-transaction.png" alt="Criar transação" height="300px" width="auto" /> <br/>
+<em>Figura 5. Criar transação</em>
+</div>
+
+Para realizar uma transferência, adicione uma nova operação clicando no botão "Adicionar nova operação". Em seguida, preencha o formulário. Após adicionar todas as operações, clique no botão "Realizar transferência".
+
+#### Como adicionar uma nova operação
+<div>
+<img src="./images/add-new-operation.png" alt="Adicionar nova operação" height="300px" width="auto" /> <br/>
+<em>Figura 6. Adicionar nova operação</em>
+</div>
+
+Para criar uma nova operação, preencha o formulário com o IBK do pagador, o IBK do beneficiário e o valor a ser transferido e clique no botão "Adicionar operação".
+
+#### Como visualizar o extrato de uma conta
+<div>
+<img src="./images/transaction-list.png" alt="Visualizar extrato da conta" height="300px" width="auto" /> <br/>
+<em>Figura 7. Visualizar extrato da conta</em>
+</div>
+
+Para visualizar o extrato de uma conta, basta verificar a lista de transações. O extrato é atualizado de tempos em tempos, garantindo que as informações estejam sempre atualizadas.
 
 ## Arquitetura do projeto
 O sistema foi divido em duas partes principais: a interface gráfica do banco e o código do banco. A interface gráfica foi desenvolvida utilizando ReactJS e a biblioteca TanStack Query para gerenciamento de estado e requisições HTTP. Já o código do banco foi desenvolvido em Go, utilizando o framework Fiber.
