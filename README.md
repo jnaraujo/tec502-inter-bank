@@ -655,27 +655,27 @@ Por exemplo, na operação de transferência, caso a conta de origem não tem sa
 func processTransaction(tr models.Transaction) error {
    // processa cada operação da transação
    for _, op := range tr.Operations {
-   // tenta subtrair o crédito da conta de origem
-   err := services.SubCreditFromAccount(op.From, op.Amount)
-   // se falhar, reverte as operações realizadas até o momento
-   if err != nil {
-   // reverte as operações realizadas até o momento
-   rollbackOperations(tr)
-   return err
-   }
+    // tenta subtrair o crédito da conta de origem
+    err := services.SubCreditFromAccount(op.From, op.Amount)
+      // se falhar, reverte as operações realizadas até o momento
+      if err != nil {
+      // reverte as operações realizadas até o momento
+      rollbackOperations(tr)
+      return err
+    }
 
-   // tenta adicionar o crédito na conta de destino
-   err = services.AddCreditToAccount(op.To, op.Amount)
-   if err != nil {
-   // como falou na segunda parte, reverte a primeira parte (subtrair crédito da conta de origem)
-   services.AddCreditToAccount(op.From, op.Amount)
-   // reverte as operações realizadas até o momento
-   rollbackOperations(tr)
-   return err
-   }
+    // tenta adicionar o crédito na conta de destino
+    err = services.AddCreditToAccount(op.To, op.Amount)
+    if err != nil {
+      // como falou na segunda parte, reverte a primeira parte (subtrair crédito da conta de origem)
+      services.AddCreditToAccount(op.From, op.Amount)
+      // reverte as operações realizadas até o momento
+      rollbackOperations(tr)
+      return err
+    }
 
-   // atualiza o status da operação para sucesso
-   storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusSuccess)
+    // atualiza o status da operação para sucesso
+    storage.Transactions.UpdateOperationStatus(tr, op, models.OperationStatusSuccess)
    }
    // atualiza o status da transação para sucesso
    storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusSuccess)
