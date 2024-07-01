@@ -49,7 +49,6 @@ func FindAllUserAccountsInterBank(document string) []models.Account {
 func FindAccountInterBank(ibk interbank.IBK) *models.Account {
 	bankURL := ""
 	for _, bank := range storage.Ring.List() {
-		slog.Info(fmt.Sprintf("Bank: %d", bank.Id))
 		if bank.Id == ibk.BankId {
 			bankURL = bank.Addr
 			break

@@ -15,26 +15,26 @@ def multipleTransactions1(addrs=["localhost:3001", "localhost:3002"]):
   
   t1 = Thread(target=api.pay, args=(acc_1_1["ibk"], [
       {
-        "from_acc_ibk": acc_1_1["ibk"],
-        "to_acc_ibk": acc_2_3["ibk"],
+        "from": acc_1_1["ibk"],
+        "to": acc_2_3["ibk"],
         "amount": 50,
       },
       {
-        "from_acc_ibk": acc_1_1["ibk"],
-        "to_acc_ibk": acc_2_3["ibk"],
+        "from": acc_1_1["ibk"],
+        "to": acc_2_3["ibk"],
         "amount": 50,
       },
     ], addrs[0]))
   
   t2 = Thread(target=api.pay, args=(acc_2_3["ibk"], [
       {
-        "from_acc_ibk": acc_2_3["ibk"],
-        "to_acc_ibk": acc_1_1["ibk"],
+        "from": acc_2_3["ibk"],
+        "to": acc_1_1["ibk"],
         "amount": 50,
       },
       {
-        "from_acc_ibk": acc_2_3["ibk"],
-        "to_acc_ibk": acc_1_1["ibk"],
+        "from": acc_2_3["ibk"],
+        "to": acc_1_1["ibk"],
         "amount": 50,
       },
     ], addrs[1]))
@@ -71,26 +71,26 @@ def multipleTransactions2(addrs=["localhost:3001", "localhost:3002", "localhost:
   for i in range(100):
     t1 = Thread(target=api.pay, args=(acc_1_1["ibk"], [
         {
-          "from_acc_ibk": acc_1_1["ibk"],
-          "to_acc_ibk": acc_2_2["ibk"],
+          "from": acc_1_1["ibk"],
+          "to": acc_2_2["ibk"],
           "amount": 0.5,
         },
         {
-          "from_acc_ibk": acc_1_1["ibk"],
-          "to_acc_ibk": acc_3_3["ibk"],
+          "from": acc_1_1["ibk"],
+          "to": acc_3_3["ibk"],
           "amount": 0.5,
         }
       ], addrs[0]))
     
     t2 = Thread(target=api.pay, args=(acc_2_2["ibk"], [
         {
-          "from_acc_ibk": acc_2_2["ibk"],
-          "to_acc_ibk": acc_1_1["ibk"],
+          "from": acc_2_2["ibk"],
+          "to": acc_1_1["ibk"],
           "amount": 0.4,
         },
         {
-          "from_acc_ibk": acc_2_2["ibk"],
-          "to_acc_ibk": acc_3_3["ibk"],
+          "from": acc_2_2["ibk"],
+          "to": acc_3_3["ibk"],
           "amount": 0.1,
         }
       ], addrs[1]))
@@ -133,23 +133,23 @@ def singleTransactionWithMultipleOperations(addrs=["localhost:3001", "localhost:
   
   api.pay(acc_1_1["ibk"], [
     {
-      "from_acc_ibk": acc_1_joint["ibk"],
-      "to_acc_ibk": acc_2_1["ibk"],
+      "from": acc_1_joint["ibk"],
+      "to": acc_2_1["ibk"],
       "amount": 50,
     },
     {
-      "from_acc_ibk": acc_1_1["ibk"],
-      "to_acc_ibk": acc_2_1["ibk"],
+      "from": acc_1_1["ibk"],
+      "to": acc_2_1["ibk"],
       "amount": 100,
     },
     {
-      "from_acc_ibk": acc_2_1["ibk"],
-      "to_acc_ibk": acc_1_2["ibk"],
+      "from": acc_2_1["ibk"],
+      "to": acc_1_2["ibk"],
       "amount": 150,
     },
     {
-      "from_acc_ibk": acc_1_joint["ibk"],
-      "to_acc_ibk": acc_2_3["ibk"],
+      "from": acc_1_joint["ibk"],
+      "to": acc_2_3["ibk"],
       "amount": 15,
     }
   ], addrs[0])
