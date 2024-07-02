@@ -8,11 +8,11 @@
   ![GitHub](https://img.shields.io/github/license/jnaraujo/tec502-inter-bank)
 </div>
 
-Nos últimos anos, o cenário bancário no Brasil tem passado por uma revolução digital significativa. A criação do sistema de pagamento instantâneo Pix, por exemplo, foi um marco importante para a modernização do sistema financeiro nacional. Conforme relatado pelo Banco Central do Brasil, a adesão dos brasileiros a essas novas formas de movimentações financeiras tem sido expressiva, promovendo a inclusão financeira de diversas camadas da população que anteriormente dependiam de métodos tradicionais como boletos e cheques.
+Nos últimos anos, o sistema bancário brasileiro tem passado por grandes revoluções. Com a criação do meio de pagamento Pix, milhões de brasileiros passaram a realizar transferência de forma simples, instantânea e sem taxas. Segundo dados do [Banco Central](https://www.bcb.gov.br/detalhenoticia/803/noticia), o Pix foi responsável por mais de 40 bilhões de transações realizadas, totalizando mais de R$ 17 trilhões movimentados.
 
-Como forma de criar uma solução descentralizada para pagamentos bancários, o InterBank foi desenvolvido. O sistema é composto por uma rede de bancos (nós) que se comunicam entre si para realizar transações financeiras de forma segura e eficiente. Assim, qualquer usuário usando qualquer um dos bancos participantes do consórcio, pode realizar transações entre suas suas contas, independente da instituição financeira de origem. Desse modo, um usuário pode criar transações com operações em diferentes bancos, de forma atômica e consistente.
+Como forma de criar um sucessor para o Pix descentralizado e integrado para pagamentos bancários para um país sem banco central, foi desenvolvido o InterBank. O objetivo do InterBank é promover uma integração entre diferentes bancos participantes do consórcio, permitindo aos clientes realizarem transferências em suas contas a partir de qualquer banco. Além disso, cada transação passa a ser vista como um pacote, permitindo ao cliente realizar diferentes operações na mesma operação, de maneira atômica e consistente.
 
-Neste contexto, o método de Token Ring foi escolhido como a solução para resolver o problema de concorrência entre os bancos participantes. Este método, amplamente utilizado em redes de computadores, garante que cada banco tenha a oportunidade de acessar e atualizar as informações das contas de forma ordenada e sem conflitos, prevenindo o "duplo gasto" e assegurando a consistência dos dados. Além disso, para o desenvolvimento do projeto, foram utilizadas tecnologias como Docker, ReactJS e Go.
+Como forma de solucionar esse problema, foram utilizadas tecnologias como Docker, ReactJS e Go. Além disso, para resolução do problema da concorrência e consistência das transações, o método Token Ring e uma variação do protocolo Two-Phase Commit foram utilizados. Desse modo, foi possível implementar uma solução que permita transações interbancárias ordenadas, sem conflito e consistente.
 
 ## Sumário
 - [Sumário](#sumário)
@@ -29,7 +29,7 @@ Neste contexto, o método de Token Ring foi escolhido como a solução para reso
     - [Como visualizar o extrato de uma conta](#como-visualizar-o-extrato-de-uma-conta)
 - [Arquitetura do projeto](#arquitetura-do-projeto)
   - [Interface gráfica](#interface-gráfica)
-  - [Código do banco](#código-do-banco)
+  - [Banco e Interbank](#banco-e-interbank)
 - [Transações interbancárias](#transações-interbancárias)
   - [Atomicidade](#atomicidade)
   - [Assincronia](#assincronia)
@@ -166,7 +166,9 @@ Para visualizar o extrato de uma conta, basta verificar a lista de transações.
 O sistema foi divido em duas partes principais: a interface gráfica do banco e o código do banco. A interface gráfica foi desenvolvida utilizando ReactJS e a biblioteca TanStack Query para gerenciamento de estado e requisições HTTP. Já o código do banco foi desenvolvido em Go, utilizando o framework Fiber.
 
 ### Interface gráfica
-A interface gráfica do banco foi desenvolvida utilizando ReactJS e a biblioteca TanStack Query para gerenciamento de estado e requisições HTTP. A interface é composta por 3 páginas principais: a página de criação de conta, a página de login e a página do banco, onde é possível realizar operações como depósito, transferência, visualização de extrato e visualização de saldo.
+Para o desenvolvimento da interface gráfica, foi utilizado a biblioteca ReactJS, uma biblioteca de código aberto para interfaces intuitivas. Além disso, a biblioteca TanStack Query foi utilizado para gerenciamento de estados e requisições HTTP, permitindo atualizar as informações em tempo real (como o saldo e a lista de transações).
+
+A interface do usuário é formada por 4 páginas principais: a página de seleção do banco do usuário, a página de login, a página de registro e a página do banco, onde é possível realizar operações como depósito, transferência, visualização de extrato e visualização de saldo.
 
 ```bash
 client
@@ -183,11 +185,13 @@ client
 │   ├── services # Funções que realizam requisições HTTP
 ```
 
-### Código do banco
-O código do banco foi desenvolvido em Go, utilizando o framework Fiber. Nele estão implementadas as rotas que são utilizadas para realizar as operações de criação de conta, login, depósito, transferência, visualização de extrato e visualização de saldo. Além disso, nele estão os códigos referentes ao sistema de Token Ring, que é utilizado para garantir a consistência dos dados, e o InterBank, que é responsável por garantir a comunicação entre os bancos.
+### Banco e Interbank
+O desenvolvimento do banco e do InterBank se derem de maneira conjunta, visto que ambos devem funcionar de maneira próxima. Ambos foram desenvolvidos em Go, uma linguagem de programação compilada criada pelo google, utilizando o Fiber, um framework web escrito em Go e com foco em simplicidade e velocidade.
+
+Para as funções internas do banco, foram implementadas [rotas](bank/internal/routes/bank) para realizar operações de criação de conta, login, depósito, transferência, visualização de extrato e visualização de saldo. Além disso, para o sistema InterBank, foram implementados sistema como o [Token Ring](bank/internal/services/token_ring.go), o [processador de transações em segundo plano](bank/internal/transaction_processor/processor.go) e as [rotas](bank/internal/routes/interbank) que permitem que as transações ocorram.
 
 ```bash
-broker
+bank
 ├── bank-api # Arquivos para teste da api
 ├── cmd # Comandos para execução da api e do token ring
 ├── internal
@@ -200,7 +204,7 @@ broker
 │   ├── services # Serviços utilizados para realizar as operações
 │   ├── storage # Armazenamento dos dados
 │   ├── token # Definição da estrutura de um Token
-│   ├── transaction_processor # Serviço que roda em background para processar as transações
+│   ├── transaction_processor # Serviço que roda em segundo plano para processar as transações
 |   ├── validate # Funções para validação de dados
 ```
 
@@ -255,7 +259,7 @@ Para garantir a atomicidade no Interbank, foi utilizado uma variação do padrã
 <em>Figura 10. Operação de duas fases com falha</em>
 </div>
 
-Caso alguma falha ocorro durante a fase de preparação, a transação é marcada como falha e todas as operações preparadas até o momento são revertidas. Além disso, se algum erro ocorrer durante a confirmação das operações, a transação é marcada como falha e todas as operações realizadas até o momento são revertidas.
+Caso alguma falha ocorra durante a fase de preparação, a transação é marcada como falha e todas as operações preparadas até o momento são revertidas. Além disso, se algum erro ocorrer durante a confirmação das operações, a transação é marcada como falha e todas as operações realizadas até o momento são revertidas.
 
 No código abaixo, a função `ProcessTransaction` é responsável por processar uma transação. Nela, a função `Prepare` é utilizada para preparar as operações de débito e crédito. Caso ocorra algum erro durante a preparação ou confirmação das operações, a transação é marcada como falha e as operações são revertidas. A função `Rollback` é utilizada para reverter as operações e a função `Commit` é utilizada para confirmar as operações. Além disso, as operações são marcadas como sucesso ou falha, garantindo que a transação seja realizada de forma completa e consistente.
 
