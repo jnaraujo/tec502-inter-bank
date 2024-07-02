@@ -117,6 +117,18 @@ def multipleTransactions2(addrs):
   if int(acc_3_3["balance"]) != 60:
     print("Erro: Saldo de Maria de Souza incorreto")
 
+def multipleTransactions3(addrs):
+  threads = []
+  for i in range(10):
+    # addresses = utils.shuffleAddrs(addrs)
+    t = Thread(target=singleTransactionWithMultipleOperations, args=(addrs,))
+    t.start()
+    threads.append(t)
+    
+  # Espera todas as threads terminarem
+  for t in threads:
+    t.join()
+
 def singleTransactionWithMultipleOperations(addrs):
   cpf_1_1 = utils.randomCpf()
   cnpj_1_2 = utils.randomCpf()
@@ -184,3 +196,56 @@ def singleTransactionWithMultipleOperations(addrs):
   api.deleteUser(acc_1_joint["id"], addrs[0])
   api.deleteUser(acc_2_1["id"], addrs[1])
   api.deleteUser(acc_2_3["id"], addrs[1])
+
+def testFailureTransactions(addrs):
+  cpf_1_1 = utils.randomCpf()
+  cpf_2_2 = utils.randomCpf()
+  
+  acc_1_1 = api.createAccount("José da Silva", [cpf_1_1], "individual", addrs[0])
+  acc_2_2 = api.createAccount("Frederico Machado", [cpf_2_2], "individual", addrs[1])
+  
+  api.createDeposit(acc_1_1["ibk"], 100, addrs[0])
+  api.createDeposit(acc_2_2["ibk"], 100, addrs[1])
+  
+  # testa uma transação que tenta enviar mais dinheiro do que o saldo
+  tx1 = api.pay(acc_1_1["ibk"], [{
+    "from": acc_1_1["ibk"],
+    "to": acc_2_2["ibk"],
+    "amount": 150,
+  }], addrs[0])
+    
+  # testa uma transação que tenta enviar dinheiro para uma conta inexistente
+  tx2 = api.pay(acc_1_1["ibk"], [{
+    "from": acc_1_1["ibk"],
+    "to": "2-20",
+    "amount": 50,
+  }], addrs[0])
+    
+  # testa uma transação que tenta enviar dinheiro para uma conta de terceiros
+  tx3 = api.pay(acc_1_1["ibk"], [{
+    "from": acc_2_2["ibk"],
+    "to": acc_1_1["ibk"],
+    "amount": 50,
+  }], addrs[0])
+  if tx3["message"] != "Usuário não pode fazer transferências com contas de terceiros":
+    print("Erro: Mensagem de erro incorreta")
+  
+  # testa uma transacao que tenta enviar dinheiro para a mesma conta
+  tx4 = api.pay(acc_1_1["ibk"], [{
+    "from": acc_1_1["ibk"],
+    "to": acc_1_1["ibk"],
+    "amount": 50,
+  }], addrs[0])
+  if tx4["message"] != "Conta de origem e destino não podem ser iguais":
+    print("Erro: Mensagem de erro incorreta")
+  
+  time.sleep(2) # Espera um pouco para as transações serem processadas
+  
+  # Verifica se as transações falharam
+  transactions = api.findAllTransactions(acc_1_1["id"], addrs[0])
+  
+  for tx in transactions:
+    if tx["id"] == tx1["id"] and tx["status"] != "failed":
+      print("Erro: Transação 1 deveria ter falhado")
+    if tx["id"] == tx2["id"] and tx["status"] != "failed":
+      print("Erro: Transação 2 deveria ter falhado")
