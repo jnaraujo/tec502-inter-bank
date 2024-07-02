@@ -58,6 +58,23 @@ func (r *ringStorage) Next(bankId interbank.BankId) *ringData {
 	return nil
 }
 
+// Retorna o banco anterior no anel de comunicação
+func (r *ringStorage) Before(bankId interbank.BankId) *ringData {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for i, bank := range r.ring {
+		if bank.Id == bankId {
+			if i == 0 {
+				return &r.ring[len(r.ring)-1]
+			}
+			return &r.ring[i-1]
+		}
+	}
+
+	return nil
+}
+
 // Retorna o anel de comunicação
 func (r *ringStorage) List() []ringData {
 	r.mu.RLock()

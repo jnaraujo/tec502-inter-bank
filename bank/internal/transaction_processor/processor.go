@@ -45,6 +45,22 @@ func BackgroundJob() {
 			if nextOwner.Id == config.Env.BankId && time.Since(storage.Token.Get().Ts) > constants.MaxWaitTimeForTokenInterBank {
 				slog.Info("Tempo de espera para token interbancário excedido. Solicitando token...")
 				services.BroadcastToken(config.Env.BankId) // faz um broadcast a todos os bancos avisando que o token agora é do banco atual
+				continue
+			}
+
+			before := storage.Ring.Before(storage.Token.Get().Owner) // banco anterior ao dono do token
+			if before == nil {
+				continue
+			}
+
+			// se o tempo de espera para o token interbancário for excedido
+			// e o banco anterior ao dono do token for o banco atual
+			// o banco atual é responsável passar o token novamente
+			maxDuration := time.Duration(float64(constants.MaxWaitTimeForTokenInterBank) * 1.5) // ~22.5s
+			if time.Since(storage.Token.Get().Ts) > maxDuration && before.Id == config.Env.BankId {
+				slog.Info("Tempo de espera para token interbancário excedido. Solicitando token...")
+				services.BroadcastToken(config.Env.BankId) // faz um broadcast a todos os bancos avisando que o token agora é do banco atual
+				continue
 			}
 		}
 	}()
