@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log/slog"
 
@@ -19,21 +18,15 @@ func main() {
 		panic(err)
 	}
 
-	var port int
-	var bankId int
-
-	flag.IntVar(&port, "port", config.Env.ServerPort, "Server port")
-	flag.IntVar(&bankId, "id", int(config.Env.BankId), "Bank id")
-	flag.Parse()
-
-	config.Env.ServerPort = port
-	config.Env.BankId = interbank.NewBankId(uint16(bankId))
-
 	slog.Info(fmt.Sprintf("Bank App - Id: %s", config.Env.BankId))
 
-	storage.Ring.Add(interbank.NewBankId(1), "localhost:3001")
-	storage.Ring.Add(interbank.NewBankId(2), "localhost:3002")
-	storage.Ring.Add(interbank.NewBankId(3), "localhost:3003")
+	if len(config.Env.Banks) == 0 {
+		panic("No banks configured")
+	}
+
+	for idx, addr := range config.Env.Banks {
+		storage.Ring.Add(interbank.NewBankId(uint16(idx)+1), addr)
+	}
 
 	signal := make(chan bool)
 

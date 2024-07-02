@@ -1,37 +1,44 @@
 services:
   client:
-    build: 
-      context: ./client
-      args:
-        - VITE_BANK_URL=http://localhost:3001
+    build: ./client
     ports:
       - "3000:3000"
-    network_mode: host
+    networks:
+      - iot-network
   bank1:
     build: ./bank
+    hostname: bank1
     environment:
       - SERVER_PORT=3001
       - BANK_ID=1
+      - BANKS=bank1:3001,bank2:3002,bank3:3003
     ports:
       - "3001:3001"
-    network_mode: host
+    networks:
+      - iot-network
   bank2:
     build: ./bank
+    hostname: bank2
     environment:
       - SERVER_PORT=3002
       - BANK_ID=2
+      - BANKS=bank1:3001,bank2:3002,bank3:3003
     ports:
       - "3002:3002"
-    network_mode: host
+    networks:
+      - iot-network
   bank3:
     build: ./bank
+    hostname: bank3
     environment:
       - SERVER_PORT=3003
       - BANK_ID=3
+      - BANKS=bank1:3001,bank2:3002,bank3:3003
     ports:
       - "3003:3003"
-    network_mode: host
+    networks:
+      - iot-network
 
-# networks:
-#   iot-network:
-#     driver: host
+networks:
+  iot-network:
+    driver: host

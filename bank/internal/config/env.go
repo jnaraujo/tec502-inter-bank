@@ -9,6 +9,7 @@ import (
 type EnvSchema struct {
 	ServerPort int              `envconfig:"SERVER_PORT" required:"true"`
 	BankId     interbank.BankId `envconfig:"BANK_ID" required:"true"`
+	Banks      []string         `envconfig:"BANKS" required:"true"`
 }
 
 var Env EnvSchema
