@@ -104,7 +104,7 @@ def multipleTransactions2(addrs):
   for t in threads:
     t.join()
   
-  time.sleep(1.5) # Espera um pouco para as transações serem processadas
+  time.sleep(2) # Espera um pouco para as transações serem processadas
   
   acc_1_1 = api.findAccount(acc_1_1["id"], addrs[0])
   acc_2_2 = api.findAccount(acc_2_2["id"], addrs[1])
@@ -154,8 +154,8 @@ def singleTransactionWithMultipleOperations(addrs):
     }
   ], addrs[0])
   
-  time.sleep(1.5) # Espera um pouco para as transações serem processadas
-  # 1.5 segundos por que tem um delay de 1 segundo nos bancos para processar as transações!!
+  time.sleep(2) # Espera um pouco para as transações serem processadas
+  # 2 segundos por que tem um delay de 1 segundo nos bancos para processar as transações!!
   
   # trs = api.findAllTransactions(acc_1_1["id"], addrs[0])
   # print(trs)
