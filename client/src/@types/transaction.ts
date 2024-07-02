@@ -11,7 +11,7 @@ export interface Operation {
 
 export interface Transaction {
   id: string
-  parent_id: string
+  parent_id?: string
   author: string
   operations: Operation[]
   created_at: string

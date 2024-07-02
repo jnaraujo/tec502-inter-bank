@@ -17,6 +17,7 @@ interface Operation {
 }
 
 interface Props {
+  txId: string
   createdAt: string
   status: TransactionStatus
   type: "final" | "package"
@@ -48,6 +49,10 @@ export function Transaction(props: Props) {
       ) : null}
 
       <div className="h-full w-full space-y-0.5">
+        <div className="text-xs tracking-wide text-zinc-500">
+          {props.type === "final" ? "Parent" : ""} Id: {props.txId}
+        </div>
+
         <h3
           className={cn("text-sm font-medium", {
             "text-green-600": props.status === "success",
@@ -60,7 +65,6 @@ export function Transaction(props: Props) {
             ? "(Pacote de transações)"
             : "(Transação final)"}
         </h3>
-
         <div>
           {props.operations.map((op, idx) => (
             <div key={idx} className="flex items-center space-x-1">
@@ -82,7 +86,7 @@ export function Transaction(props: Props) {
       </div>
 
       <div className="flex w-[200px] justify-end self-start">
-        <span className="text-left text-sm text-zinc-500">
+        <span className="text-left text-xs text-zinc-500">
           {new Date(props.createdAt).toLocaleString("pt-br")}
         </span>
       </div>
