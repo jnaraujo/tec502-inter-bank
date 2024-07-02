@@ -82,6 +82,8 @@ Como forma de solucionar esse problema, foram utilizadas tecnologias como Docker
 - Bancos
   - [Go](https://golang.org/): Linguagem de programação utilizada para o desenvolvimento do Broker.
   - [Fiber](https://gofiber.io/): Framework web para Go.
+- Testes de integração
+  - [Python](https://www.python.org/): Linguagem de programação utilizada para o teste de integração
 
 ### Como executar o projeto?
 1. Clone o repositório localmente:
