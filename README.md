@@ -8,6 +8,12 @@
   ![GitHub](https://img.shields.io/github/license/jnaraujo/tec502-inter-bank)
 </div>
 
+<div align="center">
+  <img src="/images/interface.png" alt="Client web" height="400px" width="auto" />
+</div>
+
+<br />
+
 Nos últimos anos, o sistema bancário brasileiro tem passado por grandes revoluções. Com a criação do meio de pagamento Pix, milhões de brasileiros passaram a realizar transferência de forma simples, instantânea e sem taxas. Segundo dados do [Banco Central](https://www.bcb.gov.br/detalhenoticia/803/noticia), o Pix foi responsável por mais de 40 bilhões de transações realizadas, totalizando mais de R$ 17 trilhões movimentados.
 
 Como forma de criar um sucessor para o Pix descentralizado e integrado para pagamentos bancários para um país sem banco central, foi desenvolvido o InterBank. O objetivo do InterBank é promover uma integração entre diferentes bancos participantes do consórcio, permitindo aos clientes realizarem transferências em suas contas a partir de qualquer banco. Além disso, cada transação passa a ser vista como um pacote, permitindo ao cliente realizar diferentes operações na mesma operação, de maneira atômica e consistente.
