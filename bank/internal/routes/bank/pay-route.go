@@ -80,7 +80,7 @@ func PayRoute(c *fiber.Ctx) error {
 		operations = append(operations, op)
 	}
 
-	transaction := *models.NewTransaction(body.Author, operations, models.TransactionTypePackage)
+	transaction := *models.NewPackageTransaction(body.Author, operations)
 	storage.Transactions.Save(transaction)
 	storage.TransactionQueue.Add(transaction.Id)
 
