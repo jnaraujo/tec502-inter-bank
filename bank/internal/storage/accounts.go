@@ -101,16 +101,16 @@ func (as *accountsStorage) FindUserByDocument(document string) (models.Account, 
 }
 
 // Busca todas as contas não conjuntas associadas a um documento
-func (as *accountsStorage) FindAccountByDocument(document string) (models.Account, bool) {
+func (as *accountsStorage) FindAccountByDocument(document string) *models.Account {
 	as.mu.RLock()
 	defer as.mu.RUnlock()
 
 	for _, acc := range as.data {
 		if acc.Type != models.AccountTypeJoint && acc.Documents[0] == document {
-			return acc, true
+			return &acc
 		}
 	}
-	return models.Account{}, false
+	return nil
 }
 
 // Busca todas as contas associadas a um documento (incluindo contas conjuntas)

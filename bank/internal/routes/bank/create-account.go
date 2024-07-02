@@ -40,8 +40,8 @@ func CreateAccountRoute(c *fiber.Ctx) error {
 		}
 
 		for _, doc := range body.Documents {
-			_, exists := storage.Accounts.FindAccountByDocument(doc)
-			if !exists {
+			acc := storage.Accounts.FindAccountByDocument(doc)
+			if acc == nil {
 				return c.Status(http.StatusConflict).JSON(&fiber.Map{
 					"message": fmt.Sprintf("O documento %s não está associado a nenhuma conta", doc),
 				})
@@ -58,8 +58,8 @@ func CreateAccountRoute(c *fiber.Ctx) error {
 		})
 	}
 
-	_, exists := storage.Accounts.FindAccountByDocument(body.Documents[0])
-	if exists {
+	acc := storage.Accounts.FindAccountByDocument(body.Documents[0])
+	if acc != nil {
 		return c.Status(http.StatusConflict).JSON(&fiber.Map{
 			"message": "Conta já existe",
 		})
