@@ -30,6 +30,12 @@ func BackgroundJob() {
 				continue
 			}
 
+			token := storage.Token.Get()
+			if token.Owner == config.Env.BankId && token.HasExpired() {
+				slog.Info("Token expirado. Passando para o próximo banco...")
+				services.PassToken() // passa o token para o próximo banco
+			}
+
 			nextOwner := storage.Ring.Next(storage.Token.Get().Owner)
 			if nextOwner == nil {
 				continue

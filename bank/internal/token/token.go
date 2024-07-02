@@ -20,7 +20,7 @@ func (t *Token) IsZero() bool {
 	return t.Owner == 0 && t.Ts.IsZero()
 }
 
-func (t *Token) IsValid() bool {
+func (t *Token) HasExpired() bool {
 	return time.Since(t.Ts) < MAX_TOKEN_AGE
 }
 
