@@ -209,14 +209,17 @@ bank
 ```
 
 ## Transações interbancárias
-O principal objetivo do InterBank é promover a comunicação entre os bancos do consórcio, permitindo que os usuários realizem transações entre suas contas em diferentes bancos. Para isso, o InterBank é responsável por garantir que as transações sejam realizadas de forma segura e eficiente, além de garantir a consistência dos dados.
+O principal objetivo do InterBank é promover uma integração entre os bancos do consorcio, permitindo que transações possam ser realizadas entre as contas de diferentes bancos. Desse modo, é importante criar um sistema seguro e eficiente, que permita ao usuário realizar transações atômicas, consistentes e livre de errors.
 
-Cada transação é única, contendo um ID, o dono da transação, o tipo da transação (pacote ou final), as operações a serem realizadas, a data de criação, a data de atualização. Uma transação do tipo pacote é uma transação que contém outras transações (um pacote de transações), enquanto uma transação do tipo final é uma transação que contém a operação final a ser realizada. Cada transação criada na interface é um pacote de transação, enquanto as operações realizadas são criadas em todos as contas envolvidas como transações finais.
+Para tal, toda transação criada no InterBank é única, contendo campos de ID, ID da transação pai (no caso de ser uma transação final), dono da transação, tipo da transação, operações que serão realizadas, data de criação, data de atualização e o status (pendente, sucesso ou falha). No que diz respeito ao tipo da transação, elas podem ser do tipo `pacote` ou do tipo `final`. Transações do tipo `pacote` são transações que podem conter várias operações, sendo o tipo definido quando uma transação é criada na interface do usuário. Por outro lado, transações do tipo `final` é a transação propriamente dita, ou seja, a transação que realmente terá efeito na conta.
+
+Por exemplo, quando um usuário cria uma transação no banco A que envia dinheiro de uma conta de sua propriedade no banco B para uma conta de terceiros no banco C, a transação criada no banco A serão do tipo `pacote`, enquanto as transações no banco B e no banco C serão do tipo `final`. Essa separação é importante pois torna mais simples o processo de confirmação e reversão de transações, além de separar o pacote de transações da transação que realmente irá ter algum efeito na conta.
 
 ```go
 // Código de bank/internal/models/transaction.go
 type Transaction struct {
 	Id         TransactionId     `json:"id"`
+  ParentId   *TransactionId    `json:"parent_id"`
 	Owner      interbank.IBK     `json:"owner"`
 	Type       TransactionType   `json:"type"`
 	Operations []Operation       `json:"operations"`
@@ -226,7 +229,7 @@ type Transaction struct {
 }
 ```
 
-As operações pertencentes a uma transação são compostas por um ID, a conta de origem, a conta de destino, o tipo da operação (débito ou crédito), o valor da operação, o status da operação, a data de criação e a data de atualização. O status da operação pode ser sucesso ou falha, indicando se a operação foi realizada com sucesso ou se ocorreu algum erro durante a operação.
+Vale destacar que cada operação pertencente a uma transação possui estrutura própria, possuindo campos de ID único, conta de origem, conta de destino, tipo da operação (depósito ou transferência), valor, status (pendente, sucesso ou falha), data de criação e data de atualização. O campo de status se repete pois como é necessário a confirmação de todos os bancos envolvidos em determinada transação, o momento em que cada operação é realizada varia.
 
 ```go
 // Código de bank/internal/models/operation.go
@@ -242,24 +245,24 @@ type Operation struct {
 }
 ```
 
-Todas as transações realizadas entre os bancos do consórcio tem como objetivo a atomicidade, assincronia e consistência. Isso significa que as transações são realizadas de forma completa e consistente, sem que ocorram falhas ou interrupções, garantindo que as transações sejam realizadas de forma ordenada e sem conflitos.
+Todas as transações realizadas entre os bancos do consórcio tem como objetivo a atomicidade, assincronia e consistência. Isso significa que as transações são realizadas de forma completa e consistente, sem que ocorram falhas ou interrupções.
 
 ### Atomicidade
-Atomicidade é uma das propriedades ACID (Atomicidade, Consistência, Isolamento e Durabilidade) que garante que as transações sejam realizadas de forma completa e consistente, sem que ocorram falhas ou interrupções. Isso significa que todas as operações presentes em uma transação devem ocorrer por completo ou nenhuma delas deve ocorrer. Desse modo, caso uma operação falhe, a transação é marcada como falha e todas as operações realizadas até o momento são revertidas.
+Atomicidade é uma das propriedades ACID (Atomicidade, Consistência, Isolamento e Durabilidade) que garante que as transação serão realizadas de forma completa e irredutível, ou seja, a transação só é executada se todas as operações forem executadas completamente, não sendo aceitos estados intermediários. Desse modo, caso uma operação não possa ser executada, nenhuma operação será executada. Além disso, caso alguma operação já confirmada venha a falha, todas são revertidas.
 
 <div align="center">
 <img src="./images/2pc-ok.png" alt="Operação de duas fases" height="300px" width="auto" /> <br/>
 <em>Figura 9. Operação de duas fases</em>
 </div>
 
-Para garantir a atomicidade no Interbank, foi utilizado uma variação do padrão [Two-Phase Commit](https://martinfowler.com/articles/patterns-of-distributed-systems/two-phase-commit.html). Nestes sistema, as transações são divididas em duas fases: a preparação e a confirmação. Na fase de preparação, as operações são preparadas, mas não são efetivamente realizadas. Caso todas as operações sejam preparadas com sucesso, a transação é confirmada e as operações são efetivamente realizadas.
+Para garantir a atomicidade no Interbank, foi utilizado uma variação do protocolo [Two-Phase Commit](https://martinfowler.com/articles/patterns-of-distributed-systems/two-phase-commit.html). Nesse protocolo, as transação realizadas em duas etapas: preparação (prepare) e confirmação (commit). Na etapa de preparação, as operações são enviadas para cada banco envolvido e é aguardado a confirmação se a operação pode ser realizada. Na segundo etapa (confirmação), as operações são de fato realizadas, caso todas todas as operações na etapa anterior tenham sido confirmadas.
 
 <div align="center">
 <img src="./images/2pc-error.png" alt="Operação de duas fases com falha" height="300px" width="auto" /> <br/>
 <em>Figura 10. Operação de duas fases com falha</em>
 </div>
 
-Caso alguma falha ocorra durante a fase de preparação, a transação é marcada como falha e todas as operações preparadas até o momento são revertidas. Além disso, se algum erro ocorrer durante a confirmação das operações, a transação é marcada como falha e todas as operações realizadas até o momento são revertidas.
+No caso de alguma das preparações terem falhado, todas as operações são desfeitas (rollback). Além disso, caso algum erro ocorra na etapa de confirmação, as operações também são desfeitas. Em ambos os casos de falha, o status é atualizado tanto nas operações quanto da própria transação.
 
 No código abaixo, a função `ProcessTransaction` é responsável por processar uma transação. Nela, a função `Prepare` é utilizada para preparar as operações de débito e crédito. Caso ocorra algum erro durante a preparação ou confirmação das operações, a transação é marcada como falha e as operações são revertidas. A função `Rollback` é utilizada para reverter as operações e a função `Commit` é utilizada para confirmar as operações. Além disso, as operações são marcadas como sucesso ou falha, garantindo que a transação seja realizada de forma completa e consistente.
 
@@ -316,28 +319,30 @@ func ProcessTransaction(tr models.Transaction) error {
 ```
 
 ### Assincronia
-As transações no InterBank são realizadas de forma assíncrona. Isso significa que as transações são criadas e processadas em background, sem que o usuário precise esperar pela conclusão da transação. Desse modo, o usuário pode realizar outras operações enquanto a transação é processada, garantindo que o sistema seja eficiente e responsivo.
+Todas as transações realizadas através do InterBank são realizadas de maneira assíncrona. Ou seja, todas as operações criadas são processadas em segundo plano, sem que o usuário precise esperar que a transação seja concluída. Desse modo, enquanto uma operação está sendo processada, o usuário pode realizar outras operações, como visualizar o status da transação, visualizar o saldo ou criar novas operações.
 
-Quando uma transação é criada em um banco, ela é adicionada na [fila interna](bank/internal/storage/transaction_queue.go) do banco. Essa fila é processada em background por um [serviço](bank/internal/transaction_processor/processor.go) que é responsável por processar as transações de forma assíncrona. O serviço verifica de tempos em tempos se o banco tem a posse do [token](#token-ring) e, caso tenha, processa a transação. Caso contrário, a transação é mantida na fila até que o banco possua o token. Desse modo, nenhuma transação é realizada até que o banco possua o token. Isso garante que as transações sejam realizadas de forma ordenada e sem conflitos.
+Vale destacar que quando uma transação é criada em um banco, ela é adicionada na [fila interna](bank/internal/storage/transaction_queue.go) do banco, garantindo que toda transação criada no mesmo banco seja executada em ordem. Essa fila é processada em background por um [serviço](bank/internal/transaction_processor/processor.go) que é responsável por processar as transações de forma assíncrona. O serviço verifica de tempos em tempos se o banco tem a posse do [token](#token-ring) e, caso tenha, processa a transação. Caso contrário, a transação é mantida na fila até que o banco possua o token. Desse modo, nenhuma transação é realizada até que o banco possua o token. Isso garante que as transações sejam realizadas de forma ordenada e sem conflitos.
 
-Assim que o token é adquirido, o banco começa o processamento das transações, uma de cada vez e na ordem em que foram adicionadas na file. Como cada transações possui N operações, o banco processa cada operação de forma atômica. Assim, caso uma operação falhe, a transação é marcada como falha e nenhuma operação é realizada.
+Assim que o token é adquirido, o banco começa o processamento das transações, uma de cada vez e na ordem em que foram adicionadas na fila. Como cada transações possui N operações, o banco processa cada operação de forma atômica. Assim, caso uma operação falhe, a transação é marcada como falha e nenhuma operação é realizada.
 
 Todas as operações realizada no processamento das operações (como verificar se o usuário existe, adicionar fundos na conta, subtrair fundos da conta, etc) são realizados através do InterBank.
 
 ### Consistência
-A consistência é uma das propriedades ACID (Atomicidade, Consistência, Isolamento e Durabilidade) que garante que as transações sejam realizadas de forma ordenada e sem conflitos. No Interbank, a consistência é garantida através do uso do [Token Ring](#token-ring), que é responsável por garantir que as transações sejam realizadas de forma ordenada e sem conflitos. Além disso, o InterBank é responsável por garantir que as transações sejam realizadas de forma consistente, ou seja, que as operações sejam realizadas de forma completa e correta.
+Consistência é a garantia de que nenhuma operação realizada no sistema deixará os dados inconsistentes. Ou seja, nenhuma das transações realizadas irá atualizar os dados pela metade ou alterar os dados de maneira irregular. No InterBank, a consistência do sistema é garantida através do uso do [Token Ring](#token-ring), um protocolo de acesso ao meio que garante que somente um banco irá realizar suas transação de cada vez.
 
-Todas as transações criadas no mesmo banco são processadas de forma ordenada e sem conflitos. Isso significa que, caso duas transações sejam criadas no mesmo banco, a primeira transação é processada antes da segunda transação. Além disso, todas as operações presentes em uma transação são realizadas de forma completa e correta, garantindo que as transações sejam realizadas de forma consistente. O InterBank, porém, não garante que a ordem das transações seja a mesma em todos os bancos, podendo uma transação criada em P+1 no banco 2 ser processada antes de uma transação criada em P no banco 1. Ainda assim, a consistência é garantida, pois todas as operações são realizadas de forma completa e correta.
+Desse modo, cada transação no sistema ocorre de maneira única, garantindo que nenhuma outra transação irá interferir na transação atual. Além disso, devido a natureza [atômica](#atomicidade) das transações, é garantido que nenhuma transação será feita pela metade.
+
+Ademais, como todas as transações são processadas de maneira [ordenada e sem conflito](#assincronia). caso duas transações sejam criadas no mesmo banco, a primeira transação é processada antes da segunda transação. Além disso, todas as operações presentes em uma transação são realizadas de forma completa e correta, garantindo que as transações sejam realizadas de forma consistente. O InterBank, porém, não garante que a ordem das transações seja a mesma em todos os bancos, sendo possível uma transação criada no tempo P+1 no banco 2 ser processada antes de uma transação criada no tempo P no banco 1. Ainda assim, a consistência é garantida, pois todas as operações serão realizadas de forma atômica e consistente.
 
 ## Token Ring
-O Token Ring é um protocolo que utiliza um token para controlar o acesso a uma rede de computadores. O token é passado de nó em nó, garantindo que cada nó tenha a oportunidade de acessar a rede e realizar operações de forma ordenada e sem conflitos. O algoritmo de Token Ring é baseado em uma topologia em anel e amplamente utilizado em redes e computadores, sendo originalmente definido pelo padrão IEEE 802.5.
+O Token Ring é um protocolo de acesso ao meio definido pelo padrão IEEE 802.5 e baseado em topologia em anel, amplamente utilizado em redes e computadores. O Token Ring utiliza um `token` para garantir a ordem no sistema, sendo este passado de nó em nó, permitindo que todos tenham a oportunidade de acessar a rede de forma ordenada e sem conflitos.
 
 <div align="center">
 <img src="./images/token-ring.png" alt="Token Ring" height="300px" width="auto" /> <br/>
 <em>Figura 9. Token Ring</em>
 </div>
 
-No contexto do InterBank, o Token Ring é utilizado para garantir que cada banco tenha a oportunidade de acessar e atualizar as informações das contas de forma ordenada e sem conflitos. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando um banco possui o token, ele pode realizar operações de leitura e escrita nos dados armazenados. Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele.
+No contexto do InterBank, o Token Ring é utilizado para garantir que cada banco no consórcio tenha a oportunidade de acessar e atualizar as informações das contas de forma ordenada e sem conflitos. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando um banco possui o token, ele pode realizar operações de leitura e escrita nos dados armazenados. Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele.
 
 ### Concorrência distribuída
 O uso do Token Ring garante que apenas um banco terá acesso a rede por vez, impedindo que ocorram conflitos entre os bancos. Assim, mesmo com diferentes transações sendo criadas na rede ao mesmo tempo, apenas um banco poderá processar as suas transações locais por vez. Além disso, como cada banco possui sua fila local e processa apenas uma transação por vez, é garantido que as transações sejam realizadas de forma ordenada e sem conflitos.
@@ -345,16 +350,18 @@ O uso do Token Ring garante que apenas um banco terá acesso a rede por vez, imp
 Desse modo, as operações são realizada uma de cada vez e na ordem em que foram adicionadas na fila, garantindo que o saldo final da conta seja consistente e sem duplicação de dados. Além disso, devido a natureza atômica das transações, até as transações que falharam são processadas de forma consistente.
 
 ### Transações simultâneas
-Garantir que diferentes usuários possam realizar transações simultâneas é um dos principais desafios de um sistema distribuído. Com o método de Token Ring, é possível garantir que as transações sejam realizadas de forma ordenada e sem conflitos, mesmo que diferentes usuários estejam realizando transações ao mesmo tempo.
+Garantir que diferentes usuários possam realizar transações simultâneas é um dos principais desafios de um sistema distribuído. Com o método de Token Ring, é garantido que as transações serão realizadas de forma ordenada e sem conflitos, mesmo que diferentes usuários estejam realizando transações ao mesmo tempo.
 
-Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele. Para garantir que as operações sejam realizadas de forma ordenada e sem conflitos, foi implementado um mecanismo de fila de transações. Assim que uma transação é criada, ela é adicionada na fila de transações do banco. Quando o banco possui o token, ele processa as transações da fila, uma de cada vez e na ordem em que foram adicionadas. Isso garante que as transações sejam realizadas de forma ordenada e sem conflitos.
+Desse modo, embora N transações possam ser criadas em M banco simultaneamente, somente o banco com a posse do token pode executar suas transações. Além disso, todas as transações são executadas em ordem pelo banco, de modo que somente uma transação é executada por vez.
 
-Desse modo, mesmo que diferentes transações que afetem o mesmo usuário sejam criadas no mesmo banco (ou em outros bancos), elas são processadas de forma ordenada e sem conflitos. Isso garante que as transações sejam realizadas de forma consistente e sem duplicação de dados.
+Assim, mesmo em caso de transações simultâneas ocorrendo no InterBank, nenhuma delas é executada de maneira concorrente. Nesse sentido, transações que afetem o mesmo usuário, tanto no mesmo banco quanto em outros bancos, serão processadas sem conflitos ou duplicação de dados.
 
 ### Estrutura do Token Ring
-O [Token Ring](bank/internal/storage/ring.go) é composto por um conjunto de bancos (nós) que se comunicam entre si para realizar transações financeiras de forma segura e eficiente. Cada banco possui um ID único, que é utilizado para determinar a ordem em que os bancos acessam e atualizam as informações das contas. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos.
+O [Token Ring](bank/internal/storage/ring.go) é composto por um conjunto de bancos (nós) que se comunicam entre si para realizar transações financeiras de forma segura e eficiente. Com o algoritmo de Token Ring, é garantido que todos os bancos terão acesso ao token.
 
 Todos os bancos do consórcio são definidos com antecedência e cada banco possui um ID único. O ID é utilizado para determinar a ordem em que os bancos acessam e atualizam as informações das contas. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos.
+
+No InterBank, o Token Ring também guarda informação do endereço IP do banco, permitindo que futuras consultas e operações possam ser realizadas.
 
 ```go
 // Código de bank/internal/storage/ring.go
@@ -372,7 +379,9 @@ type ringStorage struct {
 ```
 
 ### Inicialização do Token Ring
-Quando o sistema é iniciado, o banco com ID mais baixo é o responsável por criar o token e passá-lo para o próximo banco. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando o token chega no último banco, ele é passado de volta para o primeiro banco, fechando o anel. Esse processo é repetido indefinidamente, garantindo que cada banco tenha a oportunidade de acessar e atualizar as informações das contas de forma ordenada e sem conflitos. O código a seguir demonstra como o token é passado de banco em banco.
+Quando o sistema é iniciado, o banco com ID mais baixo é o responsável por criar o token e passá-lo para o próximo banco. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando o token chega no último banco, ele é passado de volta para o primeiro banco, fechando o anel. Esse processo é repetido indefinidamente, garantindo que cada banco tenha a oportunidade executar suas transações. O código a seguir demonstra como o token é passado de banco em banco.
+
+Caso o banco de ID mais baixo não esteja online no momento em que o sistema iniciar, o banco seguinte na ordem é responsável por inicializar o Token Ring.
 
 ```go
 // código de bank/internal/services/token_ring.go
@@ -387,7 +396,7 @@ if !services.IsTokenOnRing() {
 ```
 
 ### Passagem do Token
-Quando um banco possui o token, ele pode realizar operações de leitura e escrita nos dados armazenados. Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele. Assim que o banco termina de processar as transações, ele passa o token para o próximo banco. Caso o próximo banco não esteja disponível, ele tentará enviar para o próximo banco, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual.
+Quando um banco possui o token, ele pode realizar suas operações nos bancos do sistema. Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele. Assim que o banco detentor do token termina de processar suas transações, ele passa o token para o próximo banco. Caso o próximo banco não esteja disponível, ele tentará enviar para o banco seguinte, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual, até que outros bancos fiquem ativos.
 
 O código abaixo demonstra como a passagem do token é realizada. O banco verifica se o próximo banco está disponível e, caso esteja, ele passa o token para ele. Caso contrário, ele tenta passar para o próximo banco, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual.
 ```go
