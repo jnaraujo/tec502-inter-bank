@@ -207,7 +207,38 @@ broker
 ## Transações interbancárias
 O principal objetivo do InterBank é promover a comunicação entre os bancos do consórcio, permitindo que os usuários realizem transações entre suas contas em diferentes bancos. Para isso, o InterBank é responsável por garantir que as transações sejam realizadas de forma segura e eficiente, além de garantir a consistência dos dados.
 
-Desse modo, todas as transações realizadas entre os bancos do consórcio tem como objetivo a atomicidade, assincronia e consistência. Isso significa que as transações são realizadas de forma completa e consistente, sem que ocorram falhas ou interrupções, garantindo que as transações sejam realizadas de forma ordenada e sem conflitos.
+Cada transação é única, contendo um ID, o dono da transação, o tipo da transação (pacote ou final), as operações a serem realizadas, a data de criação, a data de atualização. Uma transação do tipo pacote é uma transação que contém outras transações (um pacote de transações), enquanto uma transação do tipo final é uma transação que contém a operação final a ser realizada. Cada transação criada na interface é um pacote de transação, enquanto as operações realizadas são criadas em todos as contas envolvidas como transações finais.
+
+```go
+// Código de bank/internal/models/transaction.go
+type Transaction struct {
+	Id         TransactionId     `json:"id"`
+	Owner      interbank.IBK     `json:"owner"`
+	Type       TransactionType   `json:"type"`
+	Operations []Operation       `json:"operations"`
+	CreatedAt  time.Time         `json:"created_at"`
+	UpdatedAt  time.Time         `json:"updated_at"`
+	Status     TransactionStatus `json:"status"`
+}
+```
+
+As operações pertencentes a uma transação são compostas por um ID, a conta de origem, a conta de destino, o tipo da operação (débito ou crédito), o valor da operação, o status da operação, a data de criação e a data de atualização. O status da operação pode ser sucesso ou falha, indicando se a operação foi realizada com sucesso ou se ocorreu algum erro durante a operação.
+
+```go
+// Código de bank/internal/models/operation.go
+type Operation struct {
+	Id        uuid.UUID       `json:"id"`
+	From      interbank.IBK   `json:"from"`
+	To        interbank.IBK   `json:"to"`
+	Type      OperationType   `json:"type"`
+	Amount    decimal.Decimal `json:"amount"`
+	Status    OperationStatus `json:"status"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
+}
+```
+
+Todas as transações realizadas entre os bancos do consórcio tem como objetivo a atomicidade, assincronia e consistência. Isso significa que as transações são realizadas de forma completa e consistente, sem que ocorram falhas ou interrupções, garantindo que as transações sejam realizadas de forma ordenada e sem conflitos.
 
 ### Atomicidade
 Atomicidade é uma das propriedades ACID (Atomicidade, Consistência, Isolamento e Durabilidade) que garante que as transações sejam realizadas de forma completa e consistente, sem que ocorram falhas ou interrupções. Isso significa que todas as operações presentes em uma transação devem ocorrer por completo ou nenhuma delas deve ocorrer. Desse modo, caso uma operação falhe, a transação é marcada como falha e todas as operações realizadas até o momento são revertidas.
