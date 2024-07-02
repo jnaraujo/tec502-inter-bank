@@ -212,9 +212,21 @@ Desse modo, todas as transações realizadas entre os bancos do consórcio tem c
 ### Atomicidade
 Atomicidade é uma das propriedades ACID (Atomicidade, Consistência, Isolamento e Durabilidade) que garante que as transações sejam realizadas de forma completa e consistente, sem que ocorram falhas ou interrupções. Isso significa que todas as operações presentes em uma transação devem ocorrer por completo ou nenhuma delas deve ocorrer. Desse modo, caso uma operação falhe, a transação é marcada como falha e todas as operações realizadas até o momento são revertidas.
 
-Para garantir a atomicidade no Interbank, foi utilizado uma variação do padrão [Two-Phase Commit](https://martinfowler.com/articles/patterns-of-distributed-systems/two-phase-commit.html). Nestes sistema, as transações são divididas em duas fases: a preparação e a confirmação. Na fase de preparação, as operações são preparadas, mas não são efetivamente realizadas. Caso todas as operações sejam preparadas com sucesso, a transação é confirmada e as operações são efetivamente realizadas. Caso algum erro ocorra durante a preparação das operações, a transação é marcada como falha e todas as operações preparadas até o momento são revertidas.
+<div align="center">
+<img src="./images/2pc-ok.png" alt="Operação de duas fases" height="300px" width="auto" /> <br/>
+<em>Figura 9. Operação de duas fases</em>
+</div>
 
-Por exemplo, o código abaixo mostra a função `ProcessTransaction` que é responsável por processar uma transação. Nela, as operações são preparadas e, caso todas sejam preparadas com sucesso, a transação é confirmada. Caso algum erro ocorra durante a preparação das operações, a transação é marcada como falha e todas as operações preparadas até o momento são revertidas. Além disso, se algum erro ocorrer durante a confirmação das operações, a transação é marcada como falha e todas as operações realizadas até o momento são revertidas. Desse modo, a atomicidade é garantida.
+Para garantir a atomicidade no Interbank, foi utilizado uma variação do padrão [Two-Phase Commit](https://martinfowler.com/articles/patterns-of-distributed-systems/two-phase-commit.html). Nestes sistema, as transações são divididas em duas fases: a preparação e a confirmação. Na fase de preparação, as operações são preparadas, mas não são efetivamente realizadas. Caso todas as operações sejam preparadas com sucesso, a transação é confirmada e as operações são efetivamente realizadas.
+
+<div align="center">
+<img src="./images/2pc-error.png" alt="Operação de duas fases com falha" height="300px" width="auto" /> <br/>
+<em>Figura 10. Operação de duas fases com falha</em>
+</div>
+
+Caso alguma falha ocorro durante a fase de preparação, a transação é marcada como falha e todas as operações preparadas até o momento são revertidas. Além disso, se algum erro ocorrer durante a confirmação das operações, a transação é marcada como falha e todas as operações realizadas até o momento são revertidas.
+
+No código abaixo, a função `ProcessTransaction` é responsável por processar uma transação. Nela, a função `Prepare` é utilizada para preparar as operações de débito e crédito. Caso ocorra algum erro durante a preparação ou confirmação das operações, a transação é marcada como falha e as operações são revertidas. A função `Rollback` é utilizada para reverter as operações e a função `Commit` é utilizada para confirmar as operações. Além disso, as operações são marcadas como sucesso ou falha, garantindo que a transação seja realizada de forma completa e consistente.
 
 ```go
 // Código de bank/internal/services/inter_bank.go
@@ -284,6 +296,11 @@ Todas as transações criadas no mesmo banco são processadas de forma ordenada 
 
 ## Token Ring
 O Token Ring é um protocolo que utiliza um token para controlar o acesso a uma rede de computadores. O token é passado de nó em nó, garantindo que cada nó tenha a oportunidade de acessar a rede e realizar operações de forma ordenada e sem conflitos. O algoritmo de Token Ring é baseado em uma topologia em anel e amplamente utilizado em redes e computadores, sendo originalmente definido pelo padrão IEEE 802.5.
+
+<div align="center">
+<img src="./images/token-ring.png" alt="Token Ring" height="300px" width="auto" /> <br/>
+<em>Figura 9. Token Ring</em>
+</div>
 
 No contexto do InterBank, o Token Ring é utilizado para garantir que cada banco tenha a oportunidade de acessar e atualizar as informações das contas de forma ordenada e sem conflitos. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando um banco possui o token, ele pode realizar operações de leitura e escrita nos dados armazenados. Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele.
 
@@ -360,6 +377,11 @@ if storage.Token.HasToken() {
 
 ### Detecção e recuperação de falhas
 Um dos principais problemas da utilização do método de Token Ring é a possibilidade de falhas. Caso um banco que possua o token caia, o token é perdido e as transações não podem ser realizadas. Para resolver esse problema, foi implementado um mecanismo de detecção e recuperação de falhas.
+
+<div align="center">
+<img src="./images/token-ring-bank-down.png" alt="Detecção e recuperação de falhas" height="300px" width="auto" /> <br/>
+<em>Figura 10. Detecção e recuperação de falhas</em>
+</div>
 
 Por exemplo, quando o banco que detém termina de processar as transações, ele passa o token para o próximo banco. Caso o próximo banco não esteja disponível, ele tentará enviar para o próximo banco, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual.
 
