@@ -12,7 +12,7 @@ import (
 )
 
 type prepareBodySchema struct {
-	ParentId  models.TransactionId `json:"parent_id"`
+	ParentId  models.TransactionId `json:"parent_id" validate:"required"`
 	Operation struct {
 		From   interbank.IBK   `json:"from" validate:"required"`
 		To     interbank.IBK   `json:"to" validate:"required"`

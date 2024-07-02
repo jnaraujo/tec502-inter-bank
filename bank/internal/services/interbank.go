@@ -95,14 +95,14 @@ func ProcessTransaction(tr models.Transaction) error {
 
 	isSuccess := true
 	for _, op := range tr.Operations {
-		txDebit := Prepare(op, StepDebit)
+		txDebit := Prepare(tr.Id, op, StepDebit)
 		if txDebit == nil {
 			isSuccess = false
 			break
 		}
 		externalTransactions = append(externalTransactions, txProcess{Tx: txDebit, Step: StepDebit})
 
-		txCredit := Prepare(op, StepCredit)
+		txCredit := Prepare(tr.Id, op, StepCredit)
 		if txCredit == nil {
 			isSuccess = false
 			break
@@ -165,8 +165,9 @@ const (
 	StepDebit  Step = "debit"
 )
 
-func Prepare(op models.Operation, step Step) *models.Transaction {
+func Prepare(parentId models.TransactionId, op models.Operation, step Step) *models.Transaction {
 	reqBody, _ := json.Marshal(map[string]any{
+		"parent_id": parentId,
 		"operation": map[string]string{
 			"from":   op.From.String(),
 			"to":     op.To.String(),
