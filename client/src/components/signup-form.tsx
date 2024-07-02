@@ -37,6 +37,7 @@ export function SignUpForm() {
       secondDocument: "",
     },
   })
+  const watchType = form.watch("type")
 
   async function onSubmit(data: z.infer<typeof signUpFormSchema>) {
     try {
@@ -80,7 +81,7 @@ export function SignUpForm() {
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      defaultValue="individual"
                       className="flex justify-between"
                     >
                       <FormItem className="flex items-center space-x-3 space-y-0">
@@ -141,7 +142,7 @@ export function SignUpForm() {
                 </FormItem>
               )}
             />
-            {form.getValues("type") === "joint" && (
+            {watchType === "joint" && (
               <FormField
                 control={form.control}
                 name="secondDocument"
