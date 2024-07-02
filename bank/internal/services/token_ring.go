@@ -113,6 +113,8 @@ func findNextValidBank(id interbank.BankId) *interbank.BankId {
 
 	res, err := http.Get("http://" + bank.Addr + "/interbank/token/ok")
 	if err != nil || res.StatusCode != http.StatusOK {
+		slog.Error("Banco não respondeu ao token", "bank", bank.Id, "error", err)
+
 		nextBank := storage.Ring.Next(id)
 		if nextBank == nil {
 			panic("Não tem banco no Token Ring!")
