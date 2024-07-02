@@ -1,7 +1,7 @@
 export interface User {
   id: number
   name: string
-  document: string
+  documents: string[]
   balance: string
   createdAt: Date
   ibk: string

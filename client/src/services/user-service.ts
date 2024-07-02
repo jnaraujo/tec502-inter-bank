@@ -25,7 +25,7 @@ export async function auth(ibk: string) {
     balance: res.balance,
     createdAt: new Date(res.created_at),
     ibk: res.ibk,
-    document: res.document,
+    documents: res.documents,
     type: res.type,
   } satisfies User
 }
@@ -55,7 +55,7 @@ export async function createAccount(account: CreateAccountUser) {
     balance: res.balance,
     createdAt: new Date(res.created_at),
     ibk: res.ibk,
-    document: res.document,
+    documents: res.documents,
     type: res.type,
   } satisfies User
 }
