@@ -41,6 +41,9 @@ Como forma de solucionar esse problema, foram utilizadas tecnologias como Docker
   - [Inicialização do Token Ring](#inicialização-do-token-ring)
   - [Passagem do Token](#passagem-do-token)
   - [Detecção e recuperação de falhas](#detecção-e-recuperação-de-falhas)
+    - [Queda de algum dos bancos](#queda-de-algum-dos-bancos)
+    - [Perda de token](#perda-de-token)
+    - [Duplicação de token](#duplicação-de-token)
 - [Comunicação](#comunicação)
   - [Comunicação entre a interface e o banco](#comunicação-entre-a-interface-e-o-banco)
     - [Rotas da API](#rotas-da-api)
@@ -420,20 +423,27 @@ if storage.Token.HasToken() {
 ```
 
 ### Detecção e recuperação de falhas
-Um dos principais problemas da utilização do método de Token Ring é a possibilidade de falhas. Caso um banco que possua o token caia, o token é perdido e as transações não podem ser realizadas. Para resolver esse problema, foi implementado um mecanismo de detecção e recuperação de falhas.
+Todos os sistemas são suscetíveis a falhas, principalmente sistemas distribuídos. Desse modo, é imprescindível a esses sistema que as falhas seja detectadas e o corrigidas. Com o método de Token Ring, falhas como queda de algum dos bancos do sistema, perda/duplicação de token e transações não realizadas são os erros mais prováveis. Desse modo, mecanismos de detecção e recuperação de falhas foram introduzidos ao sistema.
 
 <div align="center">
 <img src="./images/token-ring-bank-down.png" alt="Detecção e recuperação de falhas" height="300px" width="auto" /> <br/>
 <em>Figura 10. Detecção e recuperação de falhas</em>
 </div>
 
-Por exemplo, quando o banco que detém termina de processar as transações, ele passa o token para o próximo banco. Caso o próximo banco não esteja disponível, ele tentará enviar para o próximo banco, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual.
+#### Queda de algum dos bancos
+Devido a natureza distribuída do sistema e da instabilidade da rede, o sistema precisa lidar com possíveis instabilidade e quedas de algum dos nós da rede. Assim, quando o banco detentor do token passar para o próximo banco e esse estiver indisponível, ele tentará repassar para o banco seguinte. Caso este também esteja indisponível, o processo irá se reiniciar com o próximo banco, até algum banco responder.
 
-Para garantir que não ocorra duplicação de tokens, antes de iniciar o processamento das transações, o banco envia um multicast para todos os bancos do consórcio, perguntando quem é o dono do token. Caso o banco seja o dono do token, ele inicia o processamento das transações. Caso contrário, ele atualiza as informações internas sobre quem é o dono do token.
+Caso nenhum banco esteja disponível, o token é mantido no banco atual, até que algum banco esteja disponível.
 
-Além disso, foi implementado um mecanismo de timeout para garantir que o token seja passado de banco em banco. Caso o banco que detém o token não passe o token para o próximo banco em um determinado tempo, o token é considerado perdido e o próximo banco assume a responsabilidade de criar um novo token e avisar a todos que ele é agora o novo detentor do token. Para isso, o próximo banco utiliza o horário de criação do token (estrutura `Ts` do [Token](#estrutura-do-token)) como referência para verificar se o token foi perdido. Caso a diferença entre o horário atual e o horário de criação do token seja maior que um determinado tempo, o token é considerado perdido e o próximo banco assume a responsabilidade de criar um novo token.
+#### Perda de token
+Caso o banco que possua o token venha a cair antes de repassar o token, o banco seguinte, após e passar o certo tempo, é responsável por criar um novo token e avisar a todos que agora ele é o detentor do token. Para isso, ele utilizada o horário de criação do token (estrutura `Ts` do [Token](#estrutura-do-token)) como referência para verificar se o token foi perdido. Caso a diferença entre o horário atual e o horário de criação do token seja maior que um determinado tempo, o token é considerado perdido e o próximo banco assume a responsabilidade de criar um novo token.
 
-Caso o próximo banco também está indisponível, o banco anterior ao último banco que possuía o token assume a responsabilidade de criar um novo token e passar para o próximo banco. Isso garante que o token seja passado de banco em banco e que as transações sejam realizadas de forma ordenada e sem conflitos.
+Caso o próximo banco também está indisponível, o banco anterior ao último banco que possuía o token assume a responsabilidade de criar um novo token e passar para o próximo banco. Isso garante que o token nunca seja perdido e o sistema continue funcionando.
+
+#### Duplicação de token
+Para garantir que não ocorra duplicação de tokens, antes de iniciar o processamento das transações, o banco envia um multicast para todos os bancos do consórcio, perguntando quem é o dono do token. Caso este banco seja o dono do token, ele inicia o processamento das transações. Caso contrário, ele atualiza as informações internas sobre quem é o dono do token, e cancela o processamento das transações.
+
+Assim, mesmo um banco que tenha acabado de voltar de uma instabilidade vai ter a atualização mais recente.
 
 ## Comunicação
 Como forma de padronizar a comunicação tanto entre a interface e o banco, quanto entre os bancos do consórcio, foi utilizado o padrão de API REST. O uso de APIs REST permite que as operações sejam realizadas de forma simples e eficiente, além de garantir a interoperabilidade entre diferentes sistemas.
