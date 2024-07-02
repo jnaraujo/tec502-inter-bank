@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { handleZodError } from "@/lib/zod"
-import { createDepositFormSchema } from "@/schemas/create-deposit"
+import { createDepositFormSchema } from "@/schemas/deposit"
 import { useState } from "react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"

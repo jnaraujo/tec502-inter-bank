@@ -1,5 +1,5 @@
 import { useAuth } from "@/contexts/auth-context"
-import { IBK_REGEX } from "@/schemas/create-operation"
+import { loginFormSchema } from "@/schemas/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Link, useRouter } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
@@ -24,23 +24,17 @@ import {
 import { Input } from "./ui/input"
 import { toast } from "./ui/use-toast"
 
-const formSchema = z.object({
-  ibk: z.string().regex(IBK_REGEX, {
-    message: "O formado do IBK do pagador é inválido.",
-  }),
-})
-
 export function LoginForm() {
   const auth = useAuth()
   const router = useRouter()
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof loginFormSchema>>({
+    resolver: zodResolver(loginFormSchema),
     defaultValues: {
       ibk: "",
     },
   })
 
-  async function onSubmit(data: z.infer<typeof formSchema>) {
+  async function onSubmit(data: z.infer<typeof loginFormSchema>) {
     try {
       await auth.login(data)
       router.navigate({

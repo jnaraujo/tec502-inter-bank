@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { handleZodError } from "@/lib/zod"
-import { createOperationFormSchema } from "@/schemas/create-operation"
+import { createOperationFormSchema } from "@/schemas/operation"
 import { useState } from "react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"

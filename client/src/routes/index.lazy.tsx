@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/use-toast"
+import { setupAddressFormSchema } from "@/schemas/forms"
 import { useBank } from "@/stores/bank-store"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router"
@@ -26,23 +27,17 @@ export const Route = createLazyFileRoute("/")({
   component: Index,
 })
 
-const formSchema = z.object({
-  address: z.string().url({
-    message: "O endereço do banco precisa ser um URL.",
-  }),
-})
-
 function Index() {
   const navigate = useNavigate()
   const { setAddress } = useBank()
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof setupAddressFormSchema>>({
+    resolver: zodResolver(setupAddressFormSchema),
     defaultValues: {
       address: "",
     },
   })
 
-  async function onSubmit(data: z.infer<typeof formSchema>) {
+  async function onSubmit(data: z.infer<typeof setupAddressFormSchema>) {
     try {
       await fetch(`${data.address}/api`, {
         signal: AbortSignal.timeout(200),

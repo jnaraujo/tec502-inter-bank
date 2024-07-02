@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/auth-context"
+import { signUpFormSchema } from "@/schemas/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Link, useRouter } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
@@ -24,54 +25,11 @@ import { Input } from "./ui/input"
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group"
 import { toast } from "./ui/use-toast"
 
-const formSchema = z
-  .object({
-    type: z.enum(["individual", "legal", "joint"], {
-      required_error: "Selecione um tipo de conta",
-    }),
-    name: z
-      .string()
-      .min(8, {
-        message: "O nome deve ter no mínimo 6 caracteres",
-      })
-      .max(255, {
-        message: "O nome deve ter no máximo 255 caracteres",
-      }),
-    document: z
-      .string()
-      .min(4, {
-        message: "O documento deve ter no mínimo 4 caracteres",
-      })
-      .max(16, {
-        message: "O documento deve ter no máximo 16 caracteres",
-      }),
-    secondDocument: z
-      .string()
-      .min(4, {
-        message: "O documento deve ter no mínimo 4 caracteres",
-      })
-      .max(16, {
-        message: "O documento deve ter no máximo 16 caracteres",
-      })
-      .optional()
-      .or(z.literal("")),
-  })
-  .refine(
-    (data) => {
-      if (data.type !== "joint") return true
-      return data.secondDocument !== ""
-    },
-    {
-      message: "O documento do segundo titular é obrigatório",
-      path: ["secondDocument"],
-    },
-  )
-
 export function SignUpForm() {
   const router = useRouter()
   const auth = useAuth()
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof signUpFormSchema>>({
+    resolver: zodResolver(signUpFormSchema),
     defaultValues: {
       type: "individual",
       name: "",
@@ -80,7 +38,7 @@ export function SignUpForm() {
     },
   })
 
-  async function onSubmit(data: z.infer<typeof formSchema>) {
+  async function onSubmit(data: z.infer<typeof signUpFormSchema>) {
     try {
       await auth.signUp({
         name: data.name,
@@ -153,7 +111,6 @@ export function SignUpForm() {
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="name"
