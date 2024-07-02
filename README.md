@@ -571,6 +571,7 @@ Exemplo de resposta:
 {
   "id": "f64417e9-683c-4de8-a74b-31133002a808",
   "owner": "1-1",
+  "parent_id": null,
   "type": "final",
   "operations": [
     {
@@ -670,6 +671,7 @@ Exemplo de resposta:
     "id": "5f86cc57-a57b-4bcc-b707-3df28eaa679c",
     "owner": "1-1",
     "type": "package",
+    "parent_id": null,
     "operations": [
       {
         "id": "153e7f58-0764-4767-bde6-cd5ac00ae73b",
@@ -700,6 +702,7 @@ Exemplo de resposta:
     "id": "f64417e9-683c-4de8-a74b-31133002a808",
     "owner": "1-1",
     "type": "final",
+    "parent_id": null,
     "operations": [
       {
         "id": "69600a35-2083-43ac-ba5d-a8a62467eab1",
@@ -751,6 +754,7 @@ Exemplo de resposta:
   "id": "374837eb-9f72-49d3-ae27-aa5ea68c2fd9",
   "owner": "1-1",
   "type": "package",
+  "parent_id": null,
   "operations": [
     {
       "id": "b04dc295-2de8-41dc-9cda-116fe07baeb0",
@@ -791,6 +795,7 @@ Exemplo de requisição:
 POST /interbank/add-credit
 
 {
+  "parent_id": "f635b354-025b-4ab5-bf5c-a46a36998ebc",
   "operation": {
     "from": "1-1",
     "to": "2-1",
@@ -807,6 +812,7 @@ Exemplo de resposta:
  "id": "5f86cc57-a57b-4bcc-b707-3df28eaa679c",
  "owner": "1-1",
  "type": "final",
+ "parent_id": "f635b354-025b-4ab5-bf5c-a46a36998ebc",
  "operations": [
    {
      "id": "153e7f58-0764-4767-bde6-cd5ac00ae73b",
@@ -830,7 +836,7 @@ Esta [rota](/bank/internal/routes/interbank/rollback.go) é utilizada para rever
 
 Exemplo de requisição:
 ```http
-POST /interbank/sub-credit
+POST /interbank/rollback
 
 {
   "tx_id": "5f86cc57-a57b-4bcc-b707-3df28eaa679c",
@@ -845,6 +851,7 @@ Exemplo de resposta:
  "id": "5f86cc57-a57b-4bcc-b707-3df28eaa679c",
  "owner": "1-1",
  "type": "final",
+ "parent_id": "f635b354-025b-4ab5-bf5c-a46a36998ebc",
  "operations": [
    {
      "id": "153e7f58-0764-4767-bde6-cd5ac00ae73b",
@@ -883,6 +890,7 @@ Exemplo de resposta:
  "id": "5f86cc57-a57b-4bcc-b707-3df28eaa679c",
  "owner": "1-1",
  "type": "final",
+ "parent_id": "f635b354-025b-4ab5-bf5c-a46a36998ebc",
  "operations": [
    {
      "id": "153e7f58-0764-4767-bde6-cd5ac00ae73b",
