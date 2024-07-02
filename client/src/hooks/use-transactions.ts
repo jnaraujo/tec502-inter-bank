@@ -1,27 +1,7 @@
+import { Transaction } from "@/@types/transaction"
 import { TRANSACTIONS_REFETCH_INTERVAL } from "@/constants/query"
 import { useBank } from "@/stores/bank-store"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-
-export interface Operation {
-  id: string
-  from: string
-  to: string
-  type: string
-  amount: string
-  status: string
-  created_at: string
-  updated_at: string
-}
-
-export interface Transaction {
-  id: string
-  author: string
-  operations: Operation[]
-  created_at: string
-  updated_at: string
-  status: string
-  type: "package" | "final"
-}
 
 export function useTransactions(userId?: number) {
   return useQuery({
