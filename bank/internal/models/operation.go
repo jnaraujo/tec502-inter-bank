@@ -20,9 +20,7 @@ type OperationType string
 
 const (
 	OperationTypeDeposit  OperationType = "deposit"  // Depósito de dinheiro
-	OperationTypeWithdraw OperationType = "withdraw" // Saque de dinheiro
 	OperationTypeTransfer OperationType = "transfer" // Transferência de dinheiro
-	OperationTypePayment  OperationType = "payment"  // Pagamento de boleto, fatura, etc
 )
 
 type Operation struct {
