@@ -172,17 +172,20 @@ func Prepare(op models.Operation, step Step) *models.Transaction {
 		"step": step,
 	})
 
-	url := "http://localhost:300%d/interbank/prepare"
-	if step == StepDebit {
-		url = fmt.Sprintf(url, op.From.BankId)
-	} else {
-		url = fmt.Sprintf(url, op.To.BankId)
+	bank := storage.Ring.Find(op.From.BankId) // StepDebit
+	if step == StepCredit {
+		bank = storage.Ring.Find(op.To.BankId)
+	}
+
+	if bank == nil {
+		slog.Error("Bank not found")
+		return nil
 	}
 
 	client := http.Client{
 		Timeout: constants.OperationTimeout,
 	}
-	resp, err := client.Post(url, "application/json", bytes.NewBuffer(reqBody))
+	resp, err := client.Post(fmt.Sprintf("http://%s/interbank/prepare", bank.Addr), "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		slog.Error(err.Error())
 		return nil
@@ -208,17 +211,20 @@ func Rollback(txId uuid.UUID, op models.Operation, step Step) bool {
 		"step":  string(step),
 	})
 
-	url := "http://localhost:300%d/interbank/rollback"
-	if step == StepDebit {
-		url = fmt.Sprintf(url, op.From.BankId)
-	} else {
-		url = fmt.Sprintf(url, op.To.BankId)
+	bank := storage.Ring.Find(op.From.BankId) // StepDebit
+	if step == StepCredit {
+		bank = storage.Ring.Find(op.To.BankId)
+	}
+
+	if bank == nil {
+		slog.Error("Bank not found")
+		return false
 	}
 
 	client := http.Client{
 		Timeout: constants.OperationTimeout,
 	}
-	resp, err := client.Post(url, "application/json", bytes.NewBuffer(reqBody))
+	resp, err := client.Post(fmt.Sprintf("http://%s/interbank/rollback", bank.Addr), "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		slog.Error(err.Error())
 		return false
@@ -239,17 +245,20 @@ func Commit(txId uuid.UUID, op models.Operation, step Step) bool {
 		"step":  string(step),
 	})
 
-	url := "http://localhost:300%d/interbank/commit"
-	if step == StepDebit {
-		url = fmt.Sprintf(url, op.From.BankId)
-	} else {
-		url = fmt.Sprintf(url, op.To.BankId)
+	bank := storage.Ring.Find(op.From.BankId) // StepDebit
+	if step == StepCredit {
+		bank = storage.Ring.Find(op.To.BankId)
+	}
+
+	if bank == nil {
+		slog.Error("Bank not found")
+		return false
 	}
 
 	client := http.Client{
 		Timeout: constants.OperationTimeout,
 	}
-	resp, err := client.Post(url, "application/json", bytes.NewBuffer(reqBody))
+	resp, err := client.Post(fmt.Sprintf("http://%s/interbank/commit", bank.Addr), "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		slog.Error(err.Error())
 		return false
