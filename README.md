@@ -1026,4 +1026,7 @@ Para garantir que o sistema de consórcio bancário funcione corretamente, foram
 Por exemplo, para testar transações simultâneas entre os bancos, foram criados testes de integração que simulam a criação de transações em diferentes bancos ao mesmo tempo. Os testes verificam se as transações são realizadas de forma ordenada e sem conflitos, mesmo que diferentes usuários estejam realizando transações ao mesmo tempo. Para isso, foram utilizadas threads para simular a criação de transações em diferentes bancos ao mesmo tempo. Esses testes foram implementados em Python e estão disponíveis no diretório `tests`.
 
 ## Conclusão
-O sistema de consórcio bancário desenvolvido é uma solução eficiente e segura para a realização de transações financeiras entre diferentes bancos. A utilização de APIs REST, transações atômicas, Token Ring e transações assíncronas garantem que as operações sejam realizadas de forma ordenada e sem conflitos, mesmo que diferentes usuários estejam realizando transações ao mesmo tempo.
+O sistema de consórcio bancário desenvolvido é uma solução eficiente e segura para a realização de transações financeiras entre diferentes bancos. A utilização de APIs REST, transações atômicas, Token Ring e transações assíncronas garantem que as operações sejam realizadas de forma ordenada e sem conflitos, mesmo que diferentes usuários estejam realizando transações ao mesmo tempo. Além disso, foram utilizadas utilizando tecnologias modernas e atuais, como React, Go e Docker.
+
+Desse modo, o sistema desenvolvido é capaz de lidar com os requisitos propostos, além de ser capaz de lidar com as possíveis falhas do sistema de maneira satisfatória. Além disso, o sistema passou em todos os testes de transações concorrentes e atômicas.
+
