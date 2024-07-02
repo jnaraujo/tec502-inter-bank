@@ -23,7 +23,7 @@ interface Props {
   operations: Array<Operation>
 }
 
-export function TransactionBox(props: Props) {
+export function Transaction(props: Props) {
   function getLabel() {
     switch (props.status) {
       case "success":

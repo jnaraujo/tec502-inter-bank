@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/auth-context"
 import { useTransactions } from "@/hooks/use-transactions"
-import { TransactionBox } from "./transaction-box"
+import { Transaction } from "./transaction"
 
 export function TransactionListBox() {
   const { user } = useAuth()
@@ -12,7 +12,7 @@ export function TransactionListBox() {
 
       <div className="flex flex-col gap-6 overflow-auto py-2">
         {transactions.map((tr) => (
-          <TransactionBox
+          <Transaction
             key={tr.id}
             createdAt={tr.created_at}
             status={tr.status as any}
