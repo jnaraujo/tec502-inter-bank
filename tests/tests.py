@@ -3,7 +3,7 @@ import api
 import time
 from threading import Thread
 
-def multipleTransactions1(addrs=["localhost:3001", "localhost:3002"]):
+def multipleTransactions1(addrs):
   cpf_1_1 = utils.randomCpf()
   cpf_2_3 = utils.randomCpf()
   
@@ -55,7 +55,7 @@ def multipleTransactions1(addrs=["localhost:3001", "localhost:3002"]):
   if int(acc_2_3["balance"]) != 100:
     print("Erro: Saldo de Frederico Machado incorreto")
 
-def multipleTransactions2(addrs=["localhost:3001", "localhost:3002", "localhost:3003"]):
+def multipleTransactions2(addrs):
   cpf_1_1 = utils.randomCpf()
   cpf_2_2 = utils.randomCpf()
   cpf_3_3 = utils.randomCpf()
@@ -117,7 +117,7 @@ def multipleTransactions2(addrs=["localhost:3001", "localhost:3002", "localhost:
   if int(acc_3_3["balance"]) != 60:
     print("Erro: Saldo de Maria de Souza incorreto")
 
-def singleTransactionWithMultipleOperations(addrs=["localhost:3001", "localhost:3002"]):
+def singleTransactionWithMultipleOperations(addrs):
   cpf_1_1 = utils.randomCpf()
   cnpj_1_2 = utils.randomCpf()
   cpf_2_3 = utils.randomCpf()
