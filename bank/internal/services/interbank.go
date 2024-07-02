@@ -16,6 +16,10 @@ import (
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
 )
 
+var txClient = &http.Client{
+	Timeout: constants.OperationTimeout,
+}
+
 func FindAllUserAccountsInterBank(document string) []models.Account {
 	accounts := []models.Account{}
 
@@ -53,7 +57,6 @@ func FindAccountInterBank(ibk interbank.IBK) *models.Account {
 			break
 		}
 	}
-
 	if bankURL == "" {
 		slog.Error("Bank not found")
 		return nil
@@ -176,16 +179,12 @@ func Prepare(op models.Operation, step Step) *models.Transaction {
 	if step == StepCredit {
 		bank = storage.Ring.Find(op.To.BankId)
 	}
-
 	if bank == nil {
 		slog.Error("Bank not found")
 		return nil
 	}
 
-	client := http.Client{
-		Timeout: constants.OperationTimeout,
-	}
-	resp, err := client.Post(fmt.Sprintf("http://%s/interbank/prepare", bank.Addr), "application/json", bytes.NewBuffer(reqBody))
+	resp, err := txClient.Post(fmt.Sprintf("http://%s/interbank/prepare", bank.Addr), "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		slog.Error(err.Error())
 		return nil
@@ -215,16 +214,12 @@ func Rollback(txId uuid.UUID, op models.Operation, step Step) bool {
 	if step == StepCredit {
 		bank = storage.Ring.Find(op.To.BankId)
 	}
-
 	if bank == nil {
 		slog.Error("Bank not found")
 		return false
 	}
 
-	client := http.Client{
-		Timeout: constants.OperationTimeout,
-	}
-	resp, err := client.Post(fmt.Sprintf("http://%s/interbank/rollback", bank.Addr), "application/json", bytes.NewBuffer(reqBody))
+	resp, err := txClient.Post(fmt.Sprintf("http://%s/interbank/rollback", bank.Addr), "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		slog.Error(err.Error())
 		return false
@@ -249,16 +244,12 @@ func Commit(txId uuid.UUID, op models.Operation, step Step) bool {
 	if step == StepCredit {
 		bank = storage.Ring.Find(op.To.BankId)
 	}
-
 	if bank == nil {
 		slog.Error("Bank not found")
 		return false
 	}
 
-	client := http.Client{
-		Timeout: constants.OperationTimeout,
-	}
-	resp, err := client.Post(fmt.Sprintf("http://%s/interbank/commit", bank.Addr), "application/json", bytes.NewBuffer(reqBody))
+	resp, err := txClient.Post(fmt.Sprintf("http://%s/interbank/commit", bank.Addr), "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		slog.Error(err.Error())
 		return false
