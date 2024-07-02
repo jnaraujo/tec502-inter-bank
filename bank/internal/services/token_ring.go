@@ -28,7 +28,14 @@ func SetupTokenRing() {
 	bank := AskBankWithToken()
 	if bank != nil && bank.Owner == config.Env.BankId {
 		storage.Token.Set(*bank)
+		return
 	}
+
+	// define o token como o banco com menor id
+	storage.Token.Set(token.Token{
+		Owner: storage.Ring.FindBankWithLowestId().Id,
+		Ts:    time.Now(),
+	})
 }
 
 // verifica se o token já esta na rede.
