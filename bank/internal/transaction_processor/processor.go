@@ -38,7 +38,7 @@ func BackgroundJob() {
 			// se o tempo de espera para o token for excedido
 			// o primeiro banco a perceber solicita o token
 			// bancos com IDs menores têm prioridade
-			bankTokenPriority := time.Duration(math.Pow(2, float64(config.Env.BankId))) * time.Second
+			bankTokenPriority := time.Duration(math.Pow(2, float64(config.Env.BankId-1))) * time.Second
 			maxTokenWaitDuration := constants.MaxWaitTimeForTokenInterBank + bankTokenPriority
 			if time.Since(storage.Token.Get().Ts) > maxTokenWaitDuration {
 				slog.Info("Tempo de espera para token interbancário excedido. Solicitando token...", "since", time.Since(storage.Token.Get().Ts))

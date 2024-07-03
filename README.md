@@ -441,14 +441,14 @@ Devido a natureza distribuída do sistema e da instabilidade da rede, o sistema 
 Caso nenhum banco esteja disponível, o token é mantido no banco atual, até que algum banco esteja disponível.
 
 #### Perda de token
-Caso o banco que possua o token venha a cair antes de repassar o token, o primeiro banco a nota a ausência do token é responsável por criar um novo e avisar a todos. Para isso, ele utiliza o horário de criação do token (estrutura `Ts` do [Token](#estrutura-do-token)) somado a um tempo X, que varia de acordo com o banco, como referência para verificar se o token foi perdido. O tempo X é definido como `2^ID do banco`, garantindo que o banco com ID menor tenha prioridade.
+Caso o banco que possua o token venha a cair antes de repassar o token, o primeiro banco a nota a ausência do token é responsável por criar um novo e avisar a todos. Para isso, ele utiliza o horário de criação do token (estrutura `Ts` do [Token](#estrutura-do-token)) somado a um tempo X, que varia de acordo com o banco, como referência para verificar se o token foi perdido. O tempo X é definido como `2^(ID do banco - 1)`, garantindo que o banco com ID menor tenha prioridade.
 
 ```go
 // se o tempo de espera para o token for excedido
 // o primeiro banco a perceber solicita o token
 // bancos com IDs menores têm prioridade
-bankTokenPriority := math.Pow(2, float64(config.Env.BankId))
-maxTokenWaitDuration := time.Duration(float64(constants.MaxWaitTimeForTokenInterBank) + bankTokenPriority)
+bankTokenPriority := time.Duration(math.Pow(2, float64(config.Env.BankId-1))) * time.Second
+maxTokenWaitDuration := constants.MaxWaitTimeForTokenInterBank + bankTokenPriority
 if time.Since(storage.Token.Get().Ts) > maxTokenWaitDuration {
    services.BroadcastToken(config.Env.BankId) // faz um broadcast a todos os bancos avisando que o token agora é do banco atual
 }
