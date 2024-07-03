@@ -3,6 +3,8 @@ import api
 import time
 from threading import Thread
 
+WAIT_TIME_FOR_TRANSACTIONS = 5
+
 def multipleTransactions1(addrs):
   cpf_1_1 = utils.randomCpf()
   cpf_2_2 = utils.randomCpf()
@@ -65,7 +67,7 @@ def multipleTransactions1(addrs):
   t2.join()
   t3.join()
   
-  time.sleep(2) # Espera um pouco para as transações serem processadas
+  time.sleep(WAIT_TIME_FOR_TRANSACTIONS) # Espera um pouco para as transações serem processadas
   
   acc_1_1 = api.findAccount(acc_1_1["id"], addrs[0])
   acc_2_2 = api.findAccount(acc_2_2["id"], addrs[1])
@@ -132,7 +134,7 @@ def multipleTransactions2(addrs):
   for t in threads:
     t.join()
   
-  time.sleep(2) # Espera um pouco para as transações serem processadas
+  time.sleep(WAIT_TIME_FOR_TRANSACTIONS) # Espera um pouco para as transações serem processadas
   
   acc_1_1 = api.findAccount(acc_1_1["id"], addrs[0])
   acc_2_2 = api.findAccount(acc_2_2["id"], addrs[1])
@@ -199,11 +201,7 @@ def singleTransactionWithMultipleOperations(addrs):
     }
   ], addrs[0])
   
-  time.sleep(2) # Espera um pouco para as transações serem processadas
-  # 2 segundos por que tem um delay de 1 segundo nos bancos para processar as transações!!
-  
-  # trs = api.findAllTransactions(acc_1_1["id"], addrs[0])
-  # print(trs)
+  time.sleep(WAIT_TIME_FOR_TRANSACTIONS) # Espera um pouco para as transações serem processadas
   
   # Verifica se as contas estão corretas
   acc_1_1 = api.findAccount(acc_1_1["id"], addrs[0])
@@ -272,7 +270,7 @@ def testFailureTransactions(addrs):
   if tx4["message"] != "Conta de origem e destino não podem ser iguais":
     print("Erro: Mensagem de erro incorreta")
   
-  time.sleep(2) # Espera um pouco para as transações serem processadas
+  time.sleep(WAIT_TIME_FOR_TRANSACTIONS) # Espera um pouco para as transações serem processadas
   
   # Verifica se as transações falharam
   transactions = api.findAllTransactions(acc_1_1["id"], addrs[0])
