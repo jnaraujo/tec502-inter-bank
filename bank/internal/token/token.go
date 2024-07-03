@@ -21,7 +21,7 @@ func (t *Token) IsZero() bool {
 }
 
 func (t *Token) HasExpired() bool {
-	return time.Since(t.Ts) < MAX_TOKEN_AGE
+	return time.Since(t.Ts) > MAX_TOKEN_AGE
 }
 
 func (t *Token) IsOwnerInternal() bool {

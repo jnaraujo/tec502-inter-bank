@@ -25,7 +25,13 @@ func (ts *tokenStorage) Get() token.Token {
 	return ts.Token
 }
 
-func (ts *tokenStorage) HasToken() bool {
+func (ts *tokenStorage) HasValidToken() bool {
+	ts.mu.RLock()
+	defer ts.mu.RUnlock()
+	return ts.Token.IsOwnerInternal() && !ts.Token.HasExpired()
+}
+
+func (ts *tokenStorage) HasInvalidToken() bool {
 	ts.mu.RLock()
 	defer ts.mu.RUnlock()
 	return ts.Token.IsOwnerInternal() && ts.Token.HasExpired()

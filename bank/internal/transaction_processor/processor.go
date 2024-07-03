@@ -1,6 +1,7 @@
 package transaction_processor
 
 import (
+	"fmt"
 	"log/slog"
 	"math"
 	"time"
@@ -16,8 +17,7 @@ func BackgroundJob() {
 		for {
 			time.Sleep(500 * time.Millisecond) // espera para verificar as transações
 
-			slog.Info("Checking transactions...", "hasToken", storage.Token.HasToken())
-			if storage.Token.HasToken() {
+			if storage.Token.HasValidToken() {
 				bank := services.RequestTokenFromBanks()
 				if bank != nil && bank.Owner != storage.Token.Get().Owner {
 					// O sistema tem o token, mas não é o dono
@@ -30,9 +30,9 @@ func BackgroundJob() {
 				continue
 			}
 
-			token := storage.Token.Get()
-			if token.Owner == config.Env.BankId && token.HasExpired() {
+			if storage.Token.HasInvalidToken() {
 				slog.Info("Token expirado. Passando para o próximo banco...")
+				fmt.Println(storage.Token.Get())
 				services.PassToken() // passa o token para o próximo banco
 			}
 
@@ -50,16 +50,21 @@ func BackgroundJob() {
 }
 
 func processLocalTransactions() {
-	slog.Info("Processing transactions...", "hasToken", storage.Token.HasToken())
-
-	// processa as transações
 	trIds := storage.TransactionQueue.List()
+	if len(trIds) == 0 {
+		return
+	}
+
+	slog.Info("Processing transactions...", "hasToken", storage.Token.HasValidToken())
+
+	start := time.Now()
+	// processa as transações
 	for _, id := range trIds {
 		if time.Since(storage.Token.Get().Ts) > constants.MaxTimeToProcessLocalTransactions {
 			slog.Info("Tempo para processar transações locais excedido")
 			return
 		}
-		if !storage.Token.HasToken() {
+		if !storage.Token.HasValidToken() {
 			slog.Info("Token não está mais no banco")
 			return
 		}
@@ -72,4 +77,5 @@ func processLocalTransactions() {
 		}
 		services.ProcessTransaction(*tr)
 	}
+	fmt.Println("Process Transactions:", time.Since(start))
 }
