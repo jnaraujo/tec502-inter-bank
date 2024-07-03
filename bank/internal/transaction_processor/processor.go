@@ -77,5 +77,6 @@ func processLocalTransactions() {
 		}
 		services.ProcessTransaction(*tr)
 	}
-	fmt.Println("Process Transactions:", time.Since(start))
+	duration := time.Since(start)
+	fmt.Println("Process Transactions:", duration, "Txs:", len(trIds))
 }
