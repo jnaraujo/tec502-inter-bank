@@ -54,6 +54,10 @@ def multipleTransactions1(addrs):
     print("Erro: Saldo de José da Silva incorreto")
   if int(acc_2_3["balance"]) != 100:
     print("Erro: Saldo de Frederico Machado incorreto")
+    
+  # Tear down
+  api.deleteUser(acc_1_1["id"], addrs[0])
+  api.deleteUser(acc_2_3["id"], addrs[1])
 
 def multipleTransactions2(addrs):
   cpf_1_1 = utils.randomCpf()
@@ -116,6 +120,11 @@ def multipleTransactions2(addrs):
     print("Erro: Saldo de Frederico Machado incorreto")
   if int(acc_3_3["balance"]) != 60:
     print("Erro: Saldo de Maria de Souza incorreto")
+    
+  # Tear down
+  api.deleteUser(acc_1_1["id"], addrs[0])
+  api.deleteUser(acc_2_2["id"], addrs[1])
+  api.deleteUser(acc_3_3["id"], addrs[2])
 
 def multipleTransactions3(addrs):
   threads = []
@@ -249,3 +258,7 @@ def testFailureTransactions(addrs):
       print("Erro: Transação 1 deveria ter falhado")
     if tx["id"] == tx2["id"] and tx["status"] != "failed":
       print("Erro: Transação 2 deveria ter falhado")
+      
+  # Tear down
+  api.deleteUser(acc_1_1["id"], addrs[0])
+  api.deleteUser(acc_2_2["id"], addrs[1])
