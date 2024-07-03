@@ -56,7 +56,7 @@ def main():
     t.join()
     
   # espera um pouco para as transações serem processadas
-  time.sleep(2)
+  time.sleep(10)
   
   txsFromAcc1 = api.findAllTransactions(acc_1_1["id"], addrs[0])
   txsFromAcc2 = api.findAllTransactions(acc_2_1["id"], addrs[1])
