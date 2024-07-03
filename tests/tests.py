@@ -6,12 +6,15 @@ from threading import Thread
 def multipleTransactions1(addrs):
   cpf_1_1 = utils.randomCpf()
   cpf_2_2 = utils.randomCpf()
+  cpf_3_3 = utils.randomCpf()
   
   acc_1_1 = api.createAccount("José da Silva", [cpf_1_1], "individual", addrs[0])
   acc_2_2 = api.createAccount("Frederico Machado", [cpf_2_2], "individual", addrs[1])
+  acc_3_3 = api.createAccount("Maria de Souza", [cpf_3_3], "individual", addrs[2])
   
   api.createDeposit(acc_1_1["ibk"], 100, addrs[0])
   api.createDeposit(acc_2_2["ibk"], 100, addrs[1])
+  api.createDeposit(acc_3_3["ibk"], 100, addrs[2])
   
   t1 = Thread(target=api.pay, args=(acc_1_1["ibk"], [
       {
@@ -39,27 +42,46 @@ def multipleTransactions1(addrs):
       }
     ], addrs[1]))
   
+  t3 = Thread(target=api.pay, args=(acc_3_3["ibk"], [
+      {
+        "from": acc_3_3["ibk"],
+        "to": acc_1_1["ibk"],
+        "amount": 30,
+      },
+      {
+        "from": acc_3_3["ibk"],
+        "to": acc_2_2["ibk"],
+        "amount": 30,
+      },
+    ], addrs[2]))
+  
   # Inicia as threads
   t1.start()
   t2.start()
+  t3.start()
   
   # Espera as threads terminarem
   t1.join()
   t2.join()
+  t3.join()
   
   time.sleep(2) # Espera um pouco para as transações serem processadas
   
   acc_1_1 = api.findAccount(acc_1_1["id"], addrs[0])
   acc_2_2 = api.findAccount(acc_2_2["id"], addrs[1])
+  acc_3_3 = api.findAccount(acc_3_3["id"], addrs[2])
 
-  if int(acc_1_1["balance"]) != 45:
+  if int(acc_1_1["balance"]) != 75:
     print("Erro: Saldo de José da Silva incorreto")
-  if int(acc_2_2["balance"]) != 155:
+  if int(acc_2_2["balance"]) != 185:
     print("Erro: Saldo de Frederico Machado incorreto")
+  if int(acc_3_3["balance"]) != 40:
+    print("Erro: Saldo de Maria de Souza incorreto")
     
   # Tear down
   api.deleteUser(acc_1_1["id"], addrs[0])
   api.deleteUser(acc_2_2["id"], addrs[1])
+  api.deleteUser(acc_3_3["id"], addrs[2])
 
 def multipleTransactions2(addrs):
   cpf_1_1 = utils.randomCpf()

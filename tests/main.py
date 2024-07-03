@@ -19,4 +19,15 @@ def main():
   tests.testFailureTransactions(addrs)
     
   print("="*5, "Tests Finished", "="*5)
+  
+def stressTest(): 
+  while True:
+    print("Testing")
+    tests.multipleTransactions1(addrs)
+    tests.multipleTransactions2(addrs)
+    tests.multipleTransactions3(addrs)
+    tests.testFailureTransactions(addrs)
+    print("Testing")
+    
+
 main()
