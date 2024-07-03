@@ -15,7 +15,7 @@ import (
 func BackgroundJob() {
 	go func() {
 		for {
-			time.Sleep(500 * time.Millisecond) // espera para verificar as transações
+			time.Sleep(250 * time.Millisecond) // espera para verificar as transações
 
 			if storage.Token.HasValidToken() {
 				// verifica se o token ainda é do banco atual
