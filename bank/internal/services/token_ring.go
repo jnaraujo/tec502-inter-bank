@@ -123,6 +123,7 @@ func PassToken() {
 		return
 	}
 
+	slog.Info("Passando token para o próximo banco", "nextBank", *nextBankId)
 	BroadcastToken(*nextBankId)
 }
 
