@@ -18,10 +18,10 @@ func BackgroundJob() {
 			time.Sleep(500 * time.Millisecond) // espera para verificar as transações
 
 			if storage.Token.HasValidToken() {
-				bank := services.RequestTokenFromBanks()
-				if bank != nil && bank.Owner != storage.Token.Get().Owner {
-					// O sistema tem o token, mas não é o dono
-					storage.Token.Set(*bank)
+				// verifica se o token ainda é do banco atual
+				ok := verifyTokenOwnershipNetwork()
+				if !ok {
+					slog.Info("Verificação falhou")
 					continue
 				}
 
@@ -32,7 +32,6 @@ func BackgroundJob() {
 
 			if storage.Token.HasInvalidToken() {
 				slog.Info("Token expirado. Passando para o próximo banco...")
-				fmt.Println(storage.Token.Get())
 				services.PassToken() // passa o token para o próximo banco
 			}
 
@@ -42,11 +41,35 @@ func BackgroundJob() {
 			bankTokenPriority := math.Pow(2, float64(config.Env.BankId))
 			maxTokenWaitDuration := time.Duration(float64(constants.MaxWaitTimeForTokenInterBank) + bankTokenPriority)
 			if time.Since(storage.Token.Get().Ts) > maxTokenWaitDuration {
-				slog.Info("Tempo de espera para token interbancário excedido. Solicitando token...")
+				slog.Info("Tempo de espera para token interbancário excedido. Solicitando token...", "since", time.Since(storage.Token.Get().Ts))
 				services.BroadcastToken(config.Env.BankId) // faz um broadcast a todos os bancos avisando que o token agora é do banco atual
 			}
 		}
 	}()
+}
+
+func verifyTokenOwnershipNetwork() bool {
+	bank := services.RequestTokenFromBanks()
+	if bank == nil {
+		slog.Warn("Token não encontrado na rede...")
+		return false
+	}
+
+	if bank.Owner != storage.Token.Get().Owner {
+		// pode acontecer da rede estar desatualizada
+		// espera um pouco e tenta novamente
+		time.Sleep(constants.NetworkUpdateWaitDuration)
+		bank = services.RequestTokenFromBanks()
+		if bank == nil {
+			slog.Warn("Token não encontrado na rede...")
+			return false
+		}
+		// se após a segunda tentativa o token ainda não for do banco atual
+		if bank.Owner != storage.Token.Get().Owner {
+			return false
+		}
+	}
+	return true
 }
 
 func processLocalTransactions() {

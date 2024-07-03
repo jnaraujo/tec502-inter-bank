@@ -13,3 +13,8 @@ const (
 const (
 	MaxTimeToRequestToken = 250 * time.Millisecond
 )
+
+// Constantes para o tempo de espera de atualização de rede
+const (
+	NetworkUpdateWaitDuration = 50 * time.Millisecond
+)
