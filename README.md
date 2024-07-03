@@ -419,7 +419,6 @@ func PassToken() {
 
 	nextBankId := findNextValidBank(nextBank.Id)
 	if nextBankId == nil {
-		slog.Info("Não conseguiu passar o token para um banco valido. Mantém o token localmente.")
 		BroadcastToken(config.Env.BankId) // faz o broadcast do token para os outros bancos - para garantir que o token não se perca
 		return
 	}
@@ -451,7 +450,6 @@ Caso o banco que possua o token venha a cair antes de repassar o token, o primei
 bankTokenPriority := math.Pow(2, float64(config.Env.BankId))
 maxTokenWaitDuration := time.Duration(float64(constants.MaxWaitTimeForTokenInterBank) + bankTokenPriority)
 if time.Since(storage.Token.Get().Ts) > maxTokenWaitDuration {
-   slog.Info("Tempo de espera para token interbancário excedido. Solicitando token...")
    services.BroadcastToken(config.Env.BankId) // faz um broadcast a todos os bancos avisando que o token agora é do banco atual
 }
 ```
