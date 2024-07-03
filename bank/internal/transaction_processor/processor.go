@@ -18,7 +18,7 @@ func BackgroundJob() {
 
 			slog.Info("Checking transactions...", "hasToken", storage.Token.HasToken())
 			if storage.Token.HasToken() {
-				bank := services.AskBankWithToken()
+				bank := services.RequestTokenFromBanks()
 				if bank != nil && bank.Owner != storage.Token.Get().Owner {
 					// O sistema tem o token, mas não é o dono
 					storage.Token.Set(*bank)
@@ -27,7 +27,6 @@ func BackgroundJob() {
 
 				processLocalTransactions()
 				services.PassToken() // passa o token para o próximo banco
-
 				continue
 			}
 

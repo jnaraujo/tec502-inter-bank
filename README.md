@@ -407,26 +407,24 @@ if !services.IsTokenOnRing() {
 ```
 
 ### Passagem do Token
-Quando um banco possui o token, ele pode realizar suas operações nos bancos do sistema. Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele. Assim que o banco detentor do token termina de processar suas transações, ele passa o token para o próximo banco. Caso o próximo banco não esteja disponível, ele tentará enviar para o banco seguinte, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual, até que outros bancos fiquem ativos.
+Quando um banco possui o token, ele pode realizar suas operações nos bancos do sistema. Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele. Assim que o banco detentor do token terminar de processar suas transações, ele passa o token para o próximo banco. Caso o próximo banco não esteja disponível, ele tentará enviar para o banco seguinte, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual, até que outros bancos fiquem ativos.
 
-O código abaixo demonstra como a passagem do token é realizada. O banco verifica se o próximo banco está disponível e, caso esteja, ele passa o token para ele. Caso contrário, ele tenta passar para o próximo banco, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual.
+O código abaixo demonstra como a passagem do token é realizada. A primeira etapa é verificar quem é o próximo token do anel. Em seguida, a função `findNextValidBank` é responsável por encontrar o próximo banco válido, ou seja, que esteja online. Caso ele encontre um banco válido, é feito um multicast para todos os bancos avisando quem é o novo detentor do token. Caso contrário, o banco atual faz um multicast avisando que o token continua com ele.
+
 ```go
-// código de bank/internal/transaction_processor/processor.go
-// Verifica se o banco possui o token (localmente)
-if storage.Token.HasToken() {
-   // Em seguida, ele pergunta a rede quem é o dono do token
-   // É feita essa segunda verificação para garantir que o token não foi perdido
-   bank := services.AskBankWithToken()
-   if bank != nil && bank.Owner != storage.Token.Get().Owner {
-      // Se o banco atual não for o real dono do Token, ele atualiza o token internamente
-      storage.Token.Set(*bank)
-      continue
-   }
+func PassToken() {
+	// envia a transação para o próximo banco
+	nextBank := storage.Ring.Next(config.Env.BankId)
+	if nextBank == nil { ... }
 
-   // se o banco atual for o dono do token, ele processa as transações localmente
-   processLocalTransactions()
-   // em seguida, ele passa o token para o próximo banco
-   services.PassToken()
+	nextBankId := findNextValidBank(nextBank.Id)
+	if nextBankId == nil {
+		slog.Info("Não conseguiu passar o token para um banco valido. Mantém o token localmente.")
+		BroadcastToken(config.Env.BankId) // faz o broadcast do token para os outros bancos - para garantir que o token não se perca
+		return
+	}
+
+	BroadcastToken(*nextBankId)
 }
 ```
 

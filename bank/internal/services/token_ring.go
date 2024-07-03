@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/config"
+	"github.com/jnaraujo/tec502-inter-bank/bank/internal/constants"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/interbank"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/token"
@@ -25,7 +26,7 @@ func SetupTokenRing() {
 		}
 	}
 
-	bank := AskBankWithToken()
+	bank := RequestTokenFromBanks()
 	if bank != nil && bank.Owner == config.Env.BankId {
 		storage.Token.Set(*bank)
 		return
@@ -66,18 +67,22 @@ func BroadcastToken(id interbank.BankId) {
 	}
 }
 
-func AskBankWithToken() *token.Token {
+var client = http.Client{
+	Timeout: constants.MaxTimeToRequestToken,
+}
+
+func RequestTokenFromBanks() *token.Token {
+	tokenCount := map[token.Token]int{}
 	for _, bank := range storage.Ring.List() {
-		res, err := http.Get("http://" + bank.Addr + "/interbank/token")
+		res, err := client.Get("http://" + bank.Addr + "/interbank/token")
 		if err != nil {
 			continue
 		}
-		defer res.Body.Close()
-
 		if res.StatusCode != http.StatusOK {
 			continue
 		}
 
+		defer res.Body.Close()
 		data, _ := io.ReadAll(res.Body)
 		var tk token.Token
 		err = json.Unmarshal(data, &tk)
@@ -85,10 +90,23 @@ func AskBankWithToken() *token.Token {
 			continue
 		}
 
-		return &tk
+		_, ok := tokenCount[tk]
+		if !ok {
+			tokenCount[tk] = 0
+		}
+		tokenCount[tk] += 1
 	}
 
-	return nil
+	var mostFrequentToken *token.Token
+	maxCount := -1
+	for tk, count := range tokenCount {
+		if count > maxCount {
+			maxCount = count
+			mostFrequentToken = &tk
+		}
+	}
+
+	return mostFrequentToken
 }
 
 func PassToken() {
@@ -118,7 +136,7 @@ func findNextValidBank(id interbank.BankId) *interbank.BankId {
 		panic("Banco não encontrado no Token Ring!")
 	}
 
-	res, err := http.Get("http://" + bank.Addr + "/interbank/token/ok")
+	res, err := client.Get("http://" + bank.Addr + "/interbank/token/ok")
 	if err != nil || res.StatusCode != http.StatusOK {
 		slog.Error("Banco não respondeu ao token", "bank", bank.Id)
 
