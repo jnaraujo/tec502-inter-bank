@@ -459,9 +459,9 @@ if time.Since(storage.Token.Get().Ts) > maxTokenWaitDuration {
 Dado que o tempo de espera `bankTokenPriority` é exponencial, a chance de dois bancos pedirem o token ao mesmo tempo é baixa. Além disso, caso ocorra, o mecanismo de detecção de [duplicação de tokens](#duplicação-de-token) invalidaria o segundo. Isso garante que o token nunca seja perdido e o sistema continue funcionando.
 
 #### Duplicação de token
-Para garantir que não ocorra duplicação de tokens, antes de iniciar o processamento das transações, o banco envia um multicast para todos os bancos do consórcio, perguntando quem é o dono do token. Caso este banco seja o dono do token, ele inicia o processamento das transações. Caso contrário, ele atualiza as informações internas sobre quem é o dono do token, e cancela o processamento das transações.
+Para garantir que não ocorra duplicação de tokens, antes de iniciar o processamento das transações o banco envia um multicast para todos os bancos do consórcio perguntando quem é o dono do token. Caso ele mesmo seja o dono do token, é iniciado o processamento das transações. Caso contrário, ele atualiza as informações internas sobre quem é o dono do token, e cancela o processamento das transações.
 
-Assim, mesmo um banco que tenha acabado de voltar de uma instabilidade vai ter a atualização mais recente.
+Desse modo, quando um banco que caiu voltar a ativa, ele sempre vai ter a atualização mais recente sobre o token.
 
 ## Comunicação
 Como forma de padronizar a comunicação tanto entre a interface e o banco, quanto entre os bancos do consórcio, foi utilizado o padrão de API REST. O uso de APIs REST permite que as operações sejam realizadas de forma simples e eficiente, além de garantir a interoperabilidade entre diferentes sistemas.
