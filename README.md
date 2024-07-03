@@ -444,9 +444,21 @@ Devido a natureza distribuída do sistema e da instabilidade da rede, o sistema 
 Caso nenhum banco esteja disponível, o token é mantido no banco atual, até que algum banco esteja disponível.
 
 #### Perda de token
-Caso o banco que possua o token venha a cair antes de repassar o token, o banco seguinte, após e passar o certo tempo, é responsável por criar um novo token e avisar a todos que agora ele é o detentor do token. Para isso, ele utilizada o horário de criação do token (estrutura `Ts` do [Token](#estrutura-do-token)) como referência para verificar se o token foi perdido. Caso a diferença entre o horário atual e o horário de criação do token seja maior que um determinado tempo, o token é considerado perdido e o próximo banco assume a responsabilidade de criar um novo token.
+Caso o banco que possua o token venha a cair antes de repassar o token, o primeiro banco a nota a ausência do token é responsável por criar um novo e avisar a todos. Para isso, ele utiliza o horário de criação do token (estrutura `Ts` do [Token](#estrutura-do-token)) somado a um tempo X, que varia de acordo com o banco, como referência para verificar se o token foi perdido. O tempo X é definido como `2^ID do banco`, garantindo que o banco com ID menor tenha prioridade.
 
-Caso o próximo banco também está indisponível, o banco anterior ao último banco que possuía o token assume a responsabilidade de criar um novo token e passar para o próximo banco. Isso garante que o token nunca seja perdido e o sistema continue funcionando.
+```go
+// se o tempo de espera para o token for excedido
+// o primeiro banco a perceber solicita o token
+// bancos com IDs menores têm prioridade
+bankTokenPriority := math.Pow(2, float64(config.Env.BankId))
+maxTokenWaitDuration := time.Duration(float64(constants.MaxWaitTimeForTokenInterBank) + bankTokenPriority)
+if time.Since(storage.Token.Get().Ts) > maxTokenWaitDuration {
+   slog.Info("Tempo de espera para token interbancário excedido. Solicitando token...")
+   services.BroadcastToken(config.Env.BankId) // faz um broadcast a todos os bancos avisando que o token agora é do banco atual
+}
+```
+
+Dado que o tempo de espera `bankTokenPriority` é exponencial, a chance de dois bancos pedirem o token ao mesmo tempo é baixa. Além disso, caso ocorra, o mecanismo de detecção de [duplicação de tokens](#duplicação-de-token) invalidaria o segundo. Isso garante que o token nunca seja perdido e o sistema continue funcionando.
 
 #### Duplicação de token
 Para garantir que não ocorra duplicação de tokens, antes de iniciar o processamento das transações, o banco envia um multicast para todos os bancos do consórcio, perguntando quem é o dono do token. Caso este banco seja o dono do token, ele inicia o processamento das transações. Caso contrário, ele atualiza as informações internas sobre quem é o dono do token, e cancela o processamento das transações.

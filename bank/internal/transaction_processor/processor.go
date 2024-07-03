@@ -2,6 +2,7 @@ package transaction_processor
 
 import (
 	"log/slog"
+	"math"
 	"time"
 
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/config"
@@ -36,31 +37,14 @@ func BackgroundJob() {
 				services.PassToken() // passa o token para o próximo banco
 			}
 
-			nextOwner := storage.Ring.Next(storage.Token.Get().Owner)
-			if nextOwner == nil {
-				continue
-			}
-
-			// se o próximo dono do token for o banco atual e o tempo de espera para o token interbancário for excedido
-			if nextOwner.Id == config.Env.BankId && time.Since(storage.Token.Get().Ts) > constants.MaxWaitTimeForTokenInterBank {
+			// se o tempo de espera para o token for excedido
+			// o primeiro banco a perceber solicita o token
+			// bancos com IDs menores têm prioridade
+			bankTokenPriority := math.Pow(2, float64(config.Env.BankId))
+			maxTokenWaitDuration := time.Duration(float64(constants.MaxWaitTimeForTokenInterBank) + bankTokenPriority)
+			if time.Since(storage.Token.Get().Ts) > maxTokenWaitDuration {
 				slog.Info("Tempo de espera para token interbancário excedido. Solicitando token...")
 				services.BroadcastToken(config.Env.BankId) // faz um broadcast a todos os bancos avisando que o token agora é do banco atual
-				continue
-			}
-
-			before := storage.Ring.Before(storage.Token.Get().Owner) // banco anterior ao dono do token
-			if before == nil {
-				continue
-			}
-
-			// se o tempo de espera para o token interbancário for excedido
-			// e o banco anterior ao dono do token for o banco atual
-			// o banco atual é responsável passar o token novamente
-			maxDuration := time.Duration(float64(constants.MaxWaitTimeForTokenInterBank) * 1.5) // ~22.5s
-			if time.Since(storage.Token.Get().Ts) > maxDuration && before.Id == config.Env.BankId {
-				slog.Info("Tempo de espera para token interbancário excedido. Solicitando token...")
-				services.BroadcastToken(config.Env.BankId) // faz um broadcast a todos os bancos avisando que o token agora é do banco atual
-				continue
 			}
 		}
 	}()
