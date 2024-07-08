@@ -347,33 +347,33 @@ Além disso, cada transação é processada sequencialmente pelo banco, garantin
 Ademais, como todas as transações são processadas de maneira [ordenada e sem conflito](#assincronia). caso duas transações sejam criadas no mesmo instante e no mesmo banco, a primeira transação é sempre processada antes da segunda. Além disso, todas as operações presentes em uma transação são executadas de forma completa e correta, garantindo que as transações sejam realizadas de forma consistente. No entanto, o InterBank não garante que a ordem das transações seja a mesma em todos os bancos, sendo possível uma transação criada no tempo P+1 no banco B ser processada antes de uma transação criada no tempo P no banco A. Ainda assim, a consistência é garantida, pois todas as operações são realizadas de maneira atômica e consistente.
 
 ## Token Ring
-O Token Ring é um protocolo de acesso ao meio definido pelo padrão IEEE 802.5 e baseado em topologia em anel, amplamente utilizado em redes e computadores. O Token Ring utiliza um `token` para garantir a ordem no sistema, sendo este passado de nó em nó, permitindo que todos tenham a oportunidade de acessar a rede de forma ordenada e sem conflitos.
+O Token Ring é um protocolo de acesso ao meio definido pelo padrão IEEE 802.5 e baseado em topologia em anel, amplamente utilizado em redes e computadores. Nesse protocolo, é utilizado um `token` que é passado de nó em nó, garantindo a ordem no sistema. Esse método permite que todos os nós tenham a oportunidade de acessar a rede de maneira ordenada e sem conflitos.
 
 <div align="center">
 <img src="./images/token-ring.png" alt="Token Ring" height="300px" width="auto" /> <br/>
 <em>Figura 9. Token Ring</em>
 </div>
 
-No contexto do InterBank, o Token Ring é utilizado para garantir que cada banco no consórcio tenha a oportunidade de acessar e atualizar as informações das contas de forma ordenada e sem conflitos. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando um banco possui o token, ele pode realizar operações de leitura e escrita nos dados armazenados. Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele.
+No contexto do InterBank, o Token Ring é utilizado para garantir que cada banco no consórcio tenha a oportunidade de acessar e atualizar as informações das contas de maneira ordenada e sem conflitos. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando um banco possui o token, ele pode executar suas transações. Caso um banco deseje executar uma transação e não possua o token, ele deve aguardar até que o token seja passado para ele.
 
 ### Concorrência distribuída
-O uso do Token Ring garante que apenas um banco terá acesso a rede por vez, impedindo que ocorram conflitos entre os bancos. Assim, mesmo com diferentes transações sendo criadas na rede ao mesmo tempo, apenas um banco poderá processar as suas transações locais por vez. Além disso, como cada banco possui sua fila local e processa apenas uma transação por vez, é garantido que as transações sejam realizadas de forma ordenada e sem conflitos.
+O uso do Token Ring garante que apenas um banco terá acesso a rede por vez, impedindo conflitos entre os bancos. Desa forma, mesmo com diferentes transações sendo criadas na rede simultaneamente, apenas um banco pode processar suas transações locais de cada vez. Além disso, como cada banco possui sua fila local e processa apenas uma transação por vez, é garantido que as transações serão realizadas de forma ordenada e sem conflitos.
 
-Desse modo, as operações são realizada uma de cada vez e na ordem em que foram adicionadas na fila, garantindo que o saldo final da conta seja consistente e sem duplicação de dados. Além disso, devido a natureza atômica das transações, até as transações que falharam são processadas de forma consistente.
+Desse modo, as transações são processadas de maneira segura, garantindo consistência nos saldos e evitando duplicação de dados. Além disso, devido à natureza atômica das transações, mesmo as transações que falharam são tratadas de forma consistente.
 
 ### Transações simultâneas
-Garantir que diferentes usuários possam realizar transações simultâneas é um dos principais desafios de um sistema distribuído. Com o método de Token Ring, é garantido que as transações serão realizadas de forma ordenada e sem conflitos, mesmo que diferentes usuários estejam realizando transações ao mesmo tempo.
+Garantir que diferentes usuários possam realizar transações simultaneamente é um dos principais desafios de um sistema distribuído. Com o método do Token Ring, é assegurado que as transações sejam realizadas de maneira ordenada e sem conflitos, mesmo que diversos usuários estejam executando transações simultaneamente.
 
-Desse modo, embora N transações possam ser criadas em M banco simultaneamente, somente o banco com a posse do token pode executar suas transações. Além disso, todas as transações são executadas em ordem pelo banco, de modo que somente uma transação é executada por vez.
+Desse modo, embora N transações possam ser criadas simultaneamente em M bancos, apenas o banco com a posse do token pode executar suas transações. Além disso, todas as transações são executadas em ordem pelo banco, garantindo que apenas uma transação seja executada por vez.
 
-Assim, mesmo em caso de transações simultâneas ocorrendo no InterBank, nenhuma delas é executada de maneira concorrente. Nesse sentido, transações que afetem o mesmo usuário, tanto no mesmo banco quanto em outros bancos, serão processadas sem conflitos ou duplicação de dados.
+Assim, mesmo com transações simultâneas ocorrendo no InterBank, nenhuma delas é executada de forma concorrente. Portanto, transações que afetem o mesmo usuário, tanto no mesmo banco quanto em outros bancos, serão processadas sem conflitos ou duplicação de dados.
 
 ### Estrutura do Token Ring
 O [Token Ring](bank/internal/storage/ring.go) é composto por um conjunto de bancos (nós) que se comunicam entre si para realizar transações financeiras de forma segura e eficiente. Com o algoritmo de Token Ring, é garantido que todos os bancos terão acesso ao token.
 
-Todos os bancos do consórcio são definidos com antecedência e cada banco possui um ID único. O ID é utilizado para determinar a ordem em que os bancos acessam e atualizam as informações das contas. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos.
+Todos os bancos do consórcio são definidos com antecedência e cada um possui um ID único. Esse ID é usado para determinar a ordem em que os bancos acessam e atualizam as informações das contas. O token é passado de banco em banco, seguindo a ordem dos IDs.
 
-No InterBank, o Token Ring também guarda informação do endereço IP do banco, permitindo que futuras consultas e operações possam ser realizadas.
+No InterBank, o Token Ring também armazena informações como o endereço IP de cada banco, permitindo consultas e operações futuras.
 
 ```go
 // Código de bank/internal/storage/ring.go
@@ -391,9 +391,9 @@ type ringStorage struct {
 ```
 
 ### Inicialização do Token Ring
-Quando o sistema é iniciado, o banco com ID mais baixo é o responsável por criar o token e passá-lo para o próximo banco. O token é passado de banco em banco, seguindo a ordem dos IDs dos bancos. Quando o token chega no último banco, ele é passado de volta para o primeiro banco, fechando o anel. Esse processo é repetido indefinidamente, garantindo que cada banco tenha a oportunidade executar suas transações. O código a seguir demonstra como o token é passado de banco em banco.
+Quando o sistema é iniciado, o banco com o ID mais baixo é responsável por criar o token e passá-lo para o próximo banco. O token é transferido de banco em banco, seguindo a ordem dos IDs dos bancos. Ao alcançar o último banco na sequência, o token é passado de volta para o primeiro banco, fechando o anel. Esse processo é repetido indefinidamente, garantindo que cada banco tenha a oportunidade de executar suas transações.
 
-Caso o banco de ID mais baixo não esteja online no momento em que o sistema iniciar, o banco seguinte na ordem é responsável por inicializar o Token Ring.
+No caso em que o banco com o ID mais baixo não estiver online no momento em que o sistema iniciar, o banco seguinte na ordem assume a responsabilidade de inicializar o Token Ring.
 
 ```go
 // código de bank/internal/services/token_ring.go
@@ -408,9 +408,9 @@ if !services.IsTokenOnRing() {
 ```
 
 ### Passagem do Token
-Quando um banco possui o token, ele pode realizar suas operações nos bancos do sistema. Caso um banco deseje realizar uma operação e não possua o token, ele deve esperar até que o token seja passado para ele. Assim que o banco detentor do token terminar de processar suas transações, ele passa o token para o próximo banco. Caso o próximo banco não esteja disponível, ele tentará enviar para o banco seguinte, e assim por diante. Caso nenhum banco esteja disponível, o token é mantido no banco atual, até que outros bancos fiquem ativos.
+Quando um banco possui o token, ele pode realizar suas operações no InterBank. Se outro banco deseja executar uma transação e não possui o token, ele deve aguardar até que o token seja transferido para ele. Assim que o banco detentor do token terminar de processar suas transações, ele passa o token para o próximo banco da sequência. Se o próximo banco não estiver disponível, o token é encaminhado para o banco seguinte, e assim por diante. Caso nenhum banco esteja disponível, o token permanece com o banco atual até que outros bancos se tornem ativos.
 
-O código abaixo demonstra como a passagem do token é realizada. A primeira etapa é verificar quem é o próximo token do anel. Em seguida, a função `findNextValidBank` é responsável por encontrar o próximo banco válido, ou seja, que esteja online. Caso ele encontre um banco válido, é feito um multicast para todos os bancos avisando quem é o novo detentor do token. Caso contrário, o banco atual faz um multicast avisando que o token continua com ele.
+O código a seguir exemplifica como a transferência do token é realizada. Na primeira etapa, é verificado qual banco será o próximo a receber o token no anel. Em seguida, a função `findNextValidBank` é responsável por localizar o próximo banco válido, ou seja, um banco que esteja online. Se um banco válido for encontrado, é enviado um multicast para todos os bancos para informar quem será o novo detentor do token. Caso contrário, o banco atual envia um multicast informando que o token permanece com ele.
 
 ```go
 func PassToken() {
@@ -429,7 +429,7 @@ func PassToken() {
 ```
 
 ### Detecção e recuperação de falhas
-Todos os sistemas são suscetíveis a falhas, principalmente sistemas distribuídos. Desse modo, é imprescindível a esses sistema que as falhas seja detectadas e o corrigidas. Com o método de Token Ring, falhas como queda de algum dos bancos do sistema, perda/duplicação de token e transações não realizadas são os erros mais prováveis. Desse modo, mecanismos de detecção e recuperação de falhas foram introduzidos ao sistema.
+Todos os sistemas, especialmente os distribuídos, são suscetíveis a falhas. Portanto, é essencial que esses sistemas possuam mecanismos robustos para detectar e corrigir falhas. Com o método do Token Ring, alguns dos erros mais comuns incluem quedas de bancos do sistema, perda ou duplicação de tokens, e transações não realizadas. Por isso, foram introduzidos mecanismos de detecção e recuperação de falhas no sistema.
 
 <div align="center">
 <img src="./images/token-ring-bank-down.png" alt="Detecção e recuperação de falhas" height="300px" width="auto" /> <br/>
@@ -437,12 +437,12 @@ Todos os sistemas são suscetíveis a falhas, principalmente sistemas distribuí
 </div>
 
 #### Queda de algum dos bancos
-Devido a natureza distribuída do sistema e da instabilidade da rede, o sistema precisa lidar com possíveis instabilidade e quedas de algum dos nós da rede. Assim, quando o banco detentor do token passar para o próximo banco e esse estiver indisponível, ele tentará repassar para o banco seguinte. Caso este também esteja indisponível, o processo irá se reiniciar com o próximo banco, até algum banco responder.
+Devido à natureza distribuída do sistema e à potencial instabilidade da rede, é crucial lidar com possíveis falhas e quedas de nós na rede. Portanto, quando o banco detentor do token tenta passá-lo para o próximo banco e este está indisponível, ele tentará repassá-lo para o banco seguinte. Esse processo é repetido até que um banco esteja disponível para receber o token.
 
-Caso nenhum banco esteja disponível, o token é mantido no banco atual, até que algum banco esteja disponível.
+Se nenhum banco estiver disponível no momento, o token permanece no banco atual até que um banco esteja novamente disponível.
 
 #### Perda de token
-Caso o banco que possua o token venha a cair antes de repassar o token, o primeiro banco a nota a ausência do token é responsável por criar um novo e avisar a todos. Para isso, ele utiliza o horário de criação do token (estrutura `Ts` do [Token](#estrutura-do-token)) somado a um tempo X, que varia de acordo com o banco, como referência para verificar se o token foi perdido. O tempo X é definido como `2^(ID do banco - 1)`, garantindo que o banco com ID menor tenha prioridade.
+Caso o banco que possua o token venha a cair antes de repassar o token, o primeiro banco a nota a ausência do token é responsável por criar um novo e avisar a todos. Para isso, ele utiliza o horário de criação do token (estrutura `Ts` do [Token](#estrutura-do-token)) somado a um tempo X, que varia de acordo com o banco. O tempo X é definido como `2^(ID do banco - 1)`, garantindo que o banco com ID menor tenha prioridade.
 
 ```go
 // se o tempo de espera para o token for excedido
@@ -455,15 +455,15 @@ if time.Since(storage.Token.Get().Ts) > maxTokenWaitDuration {
 }
 ```
 
-Dado que o tempo de espera `bankTokenPriority` é exponencial, a chance de dois bancos pedirem o token ao mesmo tempo é baixa. Além disso, caso ocorra, o mecanismo de detecção de [duplicação de tokens](#duplicação-de-token) invalidaria o segundo. Isso garante que o token nunca seja perdido e o sistema continue funcionando.
+Dado que o tempo de espera `bankTokenPriority` é exponencial, a probabilidade de dois bancos solicitarem o token ao mesmo tempo é baixa. Caso ocorra, o mecanismo de detecção de [duplicação de tokens](#duplicação-de-token) invalidaria o segundo token. Isso garante que o token nunca seja perdido e que o sistema continue operando corretamente.
 
 #### Duplicação de token
-Para garantir que não ocorra duplicação de tokens, antes de iniciar o processamento das transações o banco envia um multicast para todos os bancos do consórcio perguntando quem é o dono do token. Caso ele mesmo seja o dono do token, é iniciado o processamento das transações. Caso contrário, ele atualiza as informações internas sobre quem é o dono do token, e cancela o processamento das transações.
+Para garantir que não ocorra duplicação do token, antes de iniciar o processamento das transações, o banco envia um multicast para todos os bancos do consórcio perguntando quem é o atual dono do token. Se o banco que fez a pergunta for identificado como o dono atual do token, ele procede com o processamento das transações. Caso contrário, ele cancela o processamento das transações.
 
-Desse modo, quando um banco que caiu voltar a ativa, ele sempre vai ter a atualização mais recente sobre o token.
+Dessa forma, quando um banco que estava inativo volta à ativa, ele não será capaz de executar transações se não for o atual detentor do token.
 
 ## Comunicação
-Como forma de padronizar a comunicação tanto entre a interface e o banco, quanto entre os bancos do consórcio, foi utilizado o padrão de API REST. O uso de APIs REST permite que as operações sejam realizadas de forma simples e eficiente, além de garantir a interoperabilidade entre diferentes sistemas.
+Como forma de padronizar a comunicação tanto entre a interface e o banco quanto entre os bancos do consórcio, foi adotado o padrão de API REST. O uso de APIs REST permite que as operações sejam realizadas de maneira simples e eficiente, além de garantir a interoperabilidade entre diferentes sistemas.
 
 ### Comunicação entre a interface e o banco
 Como forma de padronizar a comunicação entre a interface e o banco, foi definido um conjunto de rotas que são utilizadas para realizar as operações de criação de conta, login, depósito, transferência, visualização de extrato e visualização de saldo. Para realizar essas operações, a interface faz requisições HTTP para o banco, que por sua vez processa a requisição e retorna uma resposta. Essas requisições seguem o padrão REST, onde cada operação é realizada através de um método HTTP específico.
@@ -1030,7 +1030,7 @@ Exemplo de resposta:
 ```
 
 ## Sincronização dos dados internamente no banco
-Devido a natureza distribuída do sistema, leituras e escritas podem ocorrer de forma concorrente no banco. Por exemplo, dois usuário podem tentar realizar um depósito na mesma conta ao mesmo tempo, o que pode causar inconsistências nos dados.
+Devido à natureza distribuída do sistema, leituras e escritas podem ocorrer de forma concorrente no banco. Por exemplo, dois usuários podem tentar realizar um depósito na mesma conta simultaneamente, o que pode causar inconsistências nos dados.
 
 Para resolver o problema de sincronia interna, foram utilizados [mecanismos de lock](https://github.com/jnaraujo/tec502-inter-bank/blob/main/bank/internal/storage/transactions.go#L15) (mutexes) para garantir que apenas uma operações de escrita seja realizada por vez. Assim, antes que qualquer operação de leitura ou escrita no dados armazenados seja realizada, um lock é adquirido. Isso garante que as operações sejam realizadas de forma ordenada e sem conflitos.
 
