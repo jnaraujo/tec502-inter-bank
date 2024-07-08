@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/config"
@@ -67,7 +68,11 @@ func BroadcastToken(id interbank.BankId) {
 		req.Header.Set("Content-Type", "application/json")
 		res, err := client.Do(req)
 		if err != nil {
-			slog.Error("Erro ao enviar token para banco", "bank", bank.Id, "err", err)
+			if os.IsTimeout(err) {
+				slog.Warn("Timeout ao enviar token para banco", "bank", bank.Id)
+				continue
+			}
+			slog.Error("Erro ao enviar token para banco", "bank", bank.Id, "err", err.Error())
 			continue
 		}
 		if res.StatusCode != http.StatusOK {
