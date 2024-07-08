@@ -116,7 +116,7 @@ docker-compose up --build
 <em>Figura 1. Definir endereço do banco</em>
 </div>
 
-Para definir o endereço do banco, escreva o endereço do banco no campo de texto e clique no botão "Acessar banco". O endereço do banco é utilizado para realizar a comunicação entre os bancos do consórcio. Após definir o endereço do banco, você será redirecionado para a página de login.
+Para definir o banco que você deseja acessar, escreva o endereço do banco no campo de texto e clique no botão "Acessar banco". O endereço do banco é utilizado para realizar a comunicação entre o cliente e a api do banco. Após definir o endereço do banco, você será redirecionado para a página de login.
 
 #### Como criar de uma conta
 <div align="center">
@@ -177,9 +177,9 @@ Para visualizar o extrato de uma conta, basta verificar a lista de transações.
 O sistema foi divido em duas partes principais: a interface gráfica do banco e o código do banco. A interface gráfica foi desenvolvida utilizando ReactJS e a biblioteca TanStack Query para gerenciamento de estado e requisições HTTP. Já o código do banco foi desenvolvido em Go, utilizando o framework Fiber.
 
 ### Interface gráfica
-Para o desenvolvimento da interface gráfica, foi utilizado a biblioteca ReactJS, uma biblioteca de código aberto para interfaces intuitivas. Além disso, a biblioteca TanStack Query foi utilizado para gerenciamento de estados e requisições HTTP, permitindo atualizar as informações em tempo real (como o saldo e a lista de transações).
+Para o desenvolvimento da interface gráfica, foi utilizada a biblioteca ReactJS, uma biblioteca de código aberto para interfaces intuitivas. Além disso, a biblioteca TanStack Query foi utilizada para gerenciamento de estados e requisições HTTP, permitindo atualizar as informações em tempo real (como o saldo e a lista de transações).
 
-A interface do usuário é formada por 4 páginas principais: a página de seleção do banco do usuário, a página de login, a página de registro e a página do banco, onde é possível realizar operações como depósito, transferência, visualização de extrato e visualização de saldo.
+A interface do usuário é formada por 4 páginas principais: a página de seleção do banco, a página de login, a página de registro e a página do banco, onde é possível realizar operações como depósito, transferência, visualização de extrato e de saldo.
 
 ```bash
 client
@@ -197,9 +197,9 @@ client
 ```
 
 ### Banco e Interbank
-O desenvolvimento do banco e do InterBank se derem de maneira conjunta, visto que ambos devem funcionar de maneira próxima. Ambos foram desenvolvidos em Go, uma linguagem de programação compilada criada pelo google, utilizando o Fiber, um framework web escrito em Go e com foco em simplicidade e velocidade.
+O desenvolvimento do banco e do InterBank ocorreu de maneira conjunta, visto que ambos precisam funcionar de forma integrada. Ambos foram desenvolvidos em Go, uma linguagem de programação compilada criada pelo Google, utilizando o Fiber, um framework web escrito em Go com foco em simplicidade e velocidade.
 
-Para as funções internas do banco, foram implementadas [rotas](bank/internal/routes/bank) para realizar operações de criação de conta, login, depósito, transferência, visualização de extrato e visualização de saldo. Além disso, para o sistema InterBank, foram implementados sistema como o [Token Ring](bank/internal/services/token_ring.go), o [processador de transações em segundo plano](bank/internal/transaction_processor/processor.go) e as [rotas](bank/internal/routes/interbank) que permitem que as transações ocorram.
+Para as funções internas do banco, foram implementadas [rotas](bank/internal/routes/bank) para realizar operações de criação de conta, login, depósito, transferência, visualização de extrato e visualização de saldo. Além disso, para o InterBank, foram implementados sistemas como o [Token Ring](bank/internal/services/token_ring.go), o [processador de transações em segundo plano](bank/internal/transaction_processor/processor.go) e as [rotas](bank/internal/routes/interbank) que permitem que as transações ocorram.
 
 ```bash
 bank
@@ -220,11 +220,11 @@ bank
 ```
 
 ## Transações interbancárias
-O principal objetivo do InterBank é promover uma integração entre os bancos do consorcio, permitindo que transações possam ser realizadas entre as contas de diferentes bancos. Desse modo, é importante criar um sistema seguro e eficiente, que permita ao usuário realizar transações atômicas, consistentes e livre de errors.
+O principal objetivo do InterBank é promover uma integração entre os bancos do consorcio, permitindo que transações possam ser realizadas entre as contas em diferentes bancos. Desse modo, é importante criar um sistema seguro e eficiente, permitindo ao usuário realizar transações atômicas, consistentes e livre de errors.
 
-Para tal, toda transação criada no InterBank é única, contendo campos de ID, ID da transação pai (no caso de ser uma transação final), dono da transação, tipo da transação, operações que serão realizadas, data de criação, data de atualização e o status (pendente, sucesso ou falha). No que diz respeito ao tipo da transação, elas podem ser do tipo `pacote` ou do tipo `final`. Transações do tipo `pacote` são transações que podem conter várias operações, sendo o tipo definido quando uma transação é criada na interface do usuário. Por outro lado, transações do tipo `final` é a transação propriamente dita, ou seja, a transação que realmente terá efeito na conta.
+Para tal, toda transação criada no InterBank é única, contendo campos de ID da transação, ID da transação pai (no caso de ser uma transação final), chave do dono da transação, tipo da transação, operações que serão realizadas, data de criação, data de atualização e o status (pendente, sucesso ou falha). No que diz respeito ao tipo da transação, elas podem ser do tipo `pacote` ou do tipo `final`. Transações do tipo `pacote` são transações que podem conter várias operações, sendo o tipo definido quando uma transação é criada na interface do usuário. Por outro lado, uma transação do tipo `final` é a transação propriamente dita, ou seja, a transação que realmente terá efeito na conta.
 
-Por exemplo, quando um usuário cria uma transação no banco A que envia dinheiro de uma conta de sua propriedade no banco B para uma conta de terceiros no banco C, a transação criada no banco A serão do tipo `pacote`, enquanto as transações no banco B e no banco C serão do tipo `final`. Essa separação é importante pois torna mais simples o processo de confirmação e reversão de transações, além de separar o pacote de transações da transação que realmente irá ter algum efeito na conta.
+Por exemplo, quando um usuário cria uma transação no banco A que envia dinheiro de uma conta de sua propriedade no banco B para uma conta de terceiros no banco C, a transação criada no banco A será do tipo `pacote`, enquanto as transações no banco B e no banco C serão do tipo `final`. Essa separação é importante, pois torna mais simples o processo de confirmação e reversão de transações, além de separar o pacote de transações da transação que realmente terá algum efeito na conta.
 
 ```go
 // Código de bank/internal/models/transaction.go
@@ -240,7 +240,7 @@ type Transaction struct {
 }
 ```
 
-Vale destacar que cada operação pertencente a uma transação possui estrutura própria, possuindo campos de ID único, conta de origem, conta de destino, tipo da operação (depósito ou transferência), valor, status (pendente, sucesso ou falha), data de criação e data de atualização. O campo de status se repete pois como é necessário a confirmação de todos os bancos envolvidos em determinada transação, o momento em que cada operação é realizada varia.
+Vale destacar que cada operação pertencente a uma transação possui estrutura própria, possuindo campos de ID único, conta de origem, conta de destino, tipo da operação (depósito ou transferência), valor, status (pendente, sucesso ou falha), data de criação e data de atualização. O campo de status se repete, dado que cada operação pode ser realizada de forma independente, sendo marcada como sucesso ou falha. Além disso, as datas de criação e atualização são importantes para garantir que as operações sejam realizadas de forma ordenada e sem conflitos.
 
 ```go
 // Código de bank/internal/models/operation.go
@@ -256,26 +256,26 @@ type Operation struct {
 }
 ```
 
-Todas as transações realizadas entre os bancos do consórcio tem como objetivo a atomicidade, assincronia e consistência. Isso significa que as transações são realizadas de forma completa e consistente, sem que ocorram falhas ou interrupções.
+Todas as transações realizadas entre os bancos do consórcio têm como objetivo a atomicidade e a consistência. Isso significa que as transações são realizadas de forma completa e consistente, sem que ocorram falhas ou interrupções.
 
 ### Atomicidade
-Atomicidade é uma das propriedades ACID (Atomicidade, Consistência, Isolamento e Durabilidade) que garante que as transação serão realizadas de forma completa e irredutível, ou seja, a transação só é executada se todas as operações forem executadas completamente, não sendo aceitos estados intermediários. Desse modo, caso uma operação não possa ser executada, nenhuma operação será executada. Além disso, caso alguma operação já confirmada venha a falha, todas são revertidas.
+Atomicidade é uma das propriedades ACID (Atomicidade, Consistência, Isolamento e Durabilidade) que garante que as transações serão realizadas de forma completa e irredutível. Ou seja, a transação só é executada se todas as suas operações forem realizadas completamente, não sendo aceitos estados intermediários. Desse modo, se alguma das operações não possa ser concluída, nenhuma outra será executada.
 
 <div align="center">
 <img src="./images/2pc-ok.png" alt="Operação de duas fases" height="300px" width="auto" /> <br/>
 <em>Figura 9. Operação de duas fases</em>
 </div>
 
-Para garantir a atomicidade no Interbank, foi utilizado uma variação do protocolo [Two-Phase Commit](https://martinfowler.com/articles/patterns-of-distributed-systems/two-phase-commit.html). Nesse protocolo, as transação realizadas em duas etapas: preparação (prepare) e confirmação (commit). Na etapa de preparação, as operações são enviadas para cada banco envolvido e é aguardado a confirmação se a operação pode ser realizada. Na segundo etapa (confirmação), as operações são de fato realizadas, caso todas todas as operações na etapa anterior tenham sido confirmadas.
+Para garantir a atomicidade no Interbank, foi utilizado uma variação do protocolo [Two-Phase Commit](https://martinfowler.com/articles/patterns-of-distributed-systems/two-phase-commit.html). Nesse protocolo, as transações são realizadas em duas etapas: preparação (prepare) e confirmação (commit). Na etapa de preparação, as operações são enviadas para cada banco envolvido e aguarda-se a confirmação de que a operação pode ser realizada. Na segundo etapa (confirmação), as operações são de fato realizadas, apenas se todas todas as operações na etapa anterior foram confirmadas.
 
 <div align="center">
 <img src="./images/2pc-error.png" alt="Operação de duas fases com falha" height="300px" width="auto" /> <br/>
 <em>Figura 10. Operação de duas fases com falha</em>
 </div>
 
-No caso de alguma das preparações terem falhado, todas as operações são desfeitas (rollback). Além disso, caso algum erro ocorra na etapa de confirmação, as operações também são desfeitas. Em ambos os casos de falha, o status é atualizado tanto nas operações quanto da própria transação.
+Caso alguma das preparações tenham falhado, todas as operações são desfeitas (rollback). Além disso, se ocorrer algum erro na etapa de confirmação, as operações também são desfeitas. Em ambos os casos de falha, o status é atualizado tanto nas operações quanto da própria transação.
 
-No código abaixo, a função `ProcessTransaction` é responsável por processar uma transação. Nela, a função `Prepare` é utilizada para preparar as operações de débito e crédito. Caso ocorra algum erro durante a preparação ou confirmação das operações, a transação é marcada como falha e as operações são revertidas. A função `Rollback` é utilizada para reverter as operações e a função `Commit` é utilizada para confirmar as operações. Além disso, as operações são marcadas como sucesso ou falha, garantindo que a transação seja realizada de forma completa e consistente.
+No código abaixo, a função `ProcessTransaction` é responsável por processar uma transação. Nela, a função `Prepare` é utilizada para confirmar com os bancos envolvidos se a operação pode ser realizada. Caso ocorra algum erro durante a preparação ou confirmação das operações, a transação é marcada como falha e as operações são revertidas. A função `Rollback` é utilizada para reverter as operações e a função `Commit` é utilizada para confirmar as operações. As funções `UpdateTransactionStatus` e `UpdateOperationStatus` são utilizadas para atualizar o status da transação e das operações, respectivamente.
 
 ```go
 // Código de bank/internal/services/inter_bank.go
