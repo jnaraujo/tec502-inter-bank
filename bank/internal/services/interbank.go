@@ -16,8 +16,8 @@ import (
 	"github.com/jnaraujo/tec502-inter-bank/bank/internal/storage"
 )
 
-var txClient = &http.Client{
-	Timeout: constants.OperationTimeout,
+var interbankClient = &http.Client{
+	Timeout: constants.MaxInterBankRequestTimeout,
 }
 
 func FindAllUserAccountsInterBank(document string) []models.Account {
@@ -25,7 +25,7 @@ func FindAllUserAccountsInterBank(document string) []models.Account {
 
 	banks := storage.Ring.List()
 	for _, bank := range banks {
-		resp, err := http.Get(fmt.Sprintf("http://%s/interbank/account/%s", bank.Addr, document))
+		resp, err := interbankClient.Get(fmt.Sprintf("http://%s/interbank/account/%s", bank.Addr, document))
 		if err != nil {
 			continue
 		}
@@ -62,7 +62,7 @@ func FindAccountInterBank(ibk interbank.IBK) *models.Account {
 		return nil
 	}
 
-	resp, err := http.Get(fmt.Sprintf("http://%s/interbank/account/ibk/%s", bankURL, ibk))
+	resp, err := interbankClient.Get(fmt.Sprintf("http://%s/interbank/account/ibk/%s", bankURL, ibk))
 	if err != nil {
 		slog.Error(err.Error())
 		return nil
@@ -156,6 +156,10 @@ func ProcessTransaction(tr models.Transaction) error {
 	storage.Transactions.UpdateTransactionStatus(tr, models.TransactionStatusSuccess)
 
 	return nil
+}
+
+var txClient = &http.Client{
+	Timeout: constants.OperationTimeout,
 }
 
 type Step string
