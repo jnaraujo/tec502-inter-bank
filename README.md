@@ -1046,12 +1046,12 @@ func (ts *transactionsStorage) Save(tr models.Transaction) {
 ```
 
 ## Testes
-Para garantir que o sistema de consórcio bancário funcione corretamente, foram implementados testes unitários e de integração. Os testes unitários são utilizados para testar funções específicas do código, enquanto os testes de integração são utilizados para testar a integração entre diferentes componentes do sistema.
+Para garantir que o sistema de consórcio bancário funcione corretamente, foram implementados testes unitários e de integração. Os testes unitários são responsável por testar funções específicas do código, enquanto os testes de integração testam a integração entre diferentes componentes do sistema.
 
-Por exemplo, para testar transações simultâneas entre os bancos, foram criados testes de integração que simulam a criação de transações em diferentes bancos ao mesmo tempo. Os testes verificam se as transações são realizadas de forma ordenada e sem conflitos, mesmo que diferentes usuários estejam realizando transações ao mesmo tempo. Para isso, foram utilizadas threads para simular a criação de transações em diferentes bancos ao mesmo tempo. Esses testes foram implementados em Python e estão disponíveis no diretório `tests`.
+Por exemplo, para testar transações simultâneas entre os bancos, foram criados testes de integração que simulam a criação de transações em diferentes bancos ao mesmo tempo. Esses testes asseguram que as transações sejam realizadas de maneira ordenada e sem conflitos, mesmo com múltiplos usuários executando transações simultaneamente. A simulação de transações em bancos diferentes ao mesmo tempo foi realizada utilizando threads. Os testes foram implementados em Python e estão disponíveis no diretório tests.
 
 ## Conclusão
-O sistema de consórcio bancário desenvolvido é uma solução eficiente e segura para a realização de transações financeiras entre diferentes bancos. A utilização de APIs REST, transações atômicas, Token Ring e transações assíncronas garantem que as operações sejam realizadas de forma ordenada e sem conflitos, mesmo que diferentes usuários estejam realizando transações ao mesmo tempo. Além disso, foram utilizadas utilizando tecnologias modernas e atuais, como React, Go e Docker.
+O sistema de consórcio bancário desenvolvido é uma solução eficiente e segura para a realização de transações financeiras entre diferentes bancos. A utilização de APIs REST, transações atômicas, Token Ring e transações assíncronas garante que as operações sejam executadas de maneira ordenada e sem conflitos, mesmo quando vários usuários realizam transações simultaneamente. Além disso, foram adotadas tecnologias modernas como React, Go e Docker.
 
-Desse modo, o sistema desenvolvido é capaz de lidar com os requisitos propostos, além de ser capaz de lidar com as possíveis falhas do sistema de maneira satisfatória. Além disso, o sistema passou em todos os testes de transações concorrentes e atômicas.
+Dessa forma, o sistema desenvolvido não apenas atende aos requisitos propostos, mas também lida satisfatoriamente com possíveis falhas do sistema. Os testes de transações concorrentes e atômicas foram todos bem-sucedidos, validando a robustez e a confiabilidade do sistema.
 
