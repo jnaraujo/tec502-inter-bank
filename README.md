@@ -16,9 +16,9 @@
 
 Nos últimos anos, o sistema bancário brasileiro tem passado por grandes revoluções. Com a criação do meio de pagamento Pix, milhões de brasileiros passaram a realizar transferência de forma simples, instantânea e sem taxas. Segundo dados do [Banco Central](https://www.bcb.gov.br/detalhenoticia/803/noticia), o Pix foi responsável por mais de 40 bilhões de transações realizadas, totalizando mais de R$ 17 trilhões movimentados.
 
-Como forma de criar um sucessor para o Pix descentralizado e integrado para pagamentos bancários para um país sem banco central, foi desenvolvido o InterBank. O objetivo do InterBank é promover uma integração entre diferentes bancos participantes do consórcio, permitindo aos clientes realizarem transferências em suas contas a partir de qualquer banco. Além disso, cada transação passa a ser vista como um pacote, permitindo ao cliente realizar diferentes operações na mesma operação, de maneira atômica e consistente.
+Como forma de criar um sucessor descentralizado para o Pix em um país sem banco central, foi desenvolvido o InterBank. O objetivo do InterBank é promover uma integração entre diferentes bancos, permitindo aos clientes realizarem transferências em suas contas a partir de qualquer banco. Além disso, cada transação passa a ser um pacote, sendo possível adicionar várias operações que serão realizadas de maneira atômica e consistente.
 
-Como forma de solucionar esse problema, foram utilizadas tecnologias como Docker, ReactJS e Go. Além disso, para resolução do problema da concorrência e consistência das transações, o método Token Ring e uma variação do protocolo Two-Phase Commit foram utilizados. Desse modo, foi possível implementar uma solução que permita transações interbancárias ordenadas, sem conflito e consistente.
+Como forma de solucionar esse problema, foram utilizadas tecnologias como Docker, ReactJS e Go. Além disso, para resolução do problema da concorrência e consistência das transações, o método Token Ring e uma variação do protocolo Two-Phase Commit foram utilizados. Desse modo, foi possível implementar uma solução que permita transações interbancárias ordenadas, sem conflitos e consistentes.
 
 ## Sumário
 - [Sumário](#sumário)
