@@ -30,11 +30,6 @@ func BackgroundJob() {
 				continue
 			}
 
-			if storage.Token.HasInvalidToken() {
-				slog.Info("Token expirado. Passando para o próximo banco...")
-				continue
-			}
-
 			// se o tempo de espera para o token for excedido
 			// o primeiro banco a perceber solicita o token
 			// bancos com IDs menores têm prioridade
