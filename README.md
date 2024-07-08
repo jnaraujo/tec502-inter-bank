@@ -442,7 +442,7 @@ Devido à natureza distribuída do sistema e à potencial instabilidade da rede,
 Se nenhum banco estiver disponível no momento, o token permanece no banco atual até que um banco esteja novamente disponível.
 
 #### Perda de token
-Caso o banco que possua o token venha a cair antes de repassar o token, o primeiro banco a nota a ausência do token é responsável por criar um novo e avisar a todos. Para isso, ele utiliza o horário de criação do token (estrutura `Ts` do [Token](#estrutura-do-token)) somado a um tempo X, que varia de acordo com o banco. O tempo X é definido como `2^(ID do banco - 1)`, garantindo que o banco com ID menor tenha prioridade.
+Caso o banco que possua o token venha a cair antes de repassar o token, o primeiro banco a nota a ausência do token é responsável por criar um novo e avisar a todos. Para isso, ele utiliza o horário de criação do token (estrutura `Ts` do [Token](#estrutura-do-token)) somado a um tempo X, que varia de acordo com o banco. O tempo X é definido como `3*(ID do banco - 1)`, garantindo que o banco com ID menor tenha prioridade.
 
 ```go
 // se o tempo de espera para o token for excedido
@@ -455,7 +455,7 @@ if time.Since(storage.Token.Get().Ts) > maxTokenWaitDuration {
 }
 ```
 
-Dado que o tempo de espera `bankTokenPriority` é exponencial, a probabilidade de dois bancos solicitarem o token ao mesmo tempo é baixa. Caso ocorra, o mecanismo de detecção de [duplicação de tokens](#duplicação-de-token) invalidaria o segundo token. Isso garante que o token nunca seja perdido e que o sistema continue operando corretamente.
+Dado que o tempo de espera `bankTokenPriority` é linear, a probabilidade de dois bancos solicitarem o token ao mesmo tempo é baixa. Caso ocorra, o mecanismo de detecção de [duplicação de tokens](#duplicação-de-token) invalidaria o segundo token. Isso garante que o token nunca seja perdido e que o sistema continue operando corretamente.
 
 #### Duplicação de token
 Para garantir que não ocorra duplicação do token, antes de iniciar o processamento das transações, o banco envia um multicast para todos os bancos do consórcio perguntando quem é o atual dono do token. Se o banco que fez a pergunta for identificado como o dono atual do token, ele procede com o processamento das transações. Caso contrário, ele cancela o processamento das transações.
