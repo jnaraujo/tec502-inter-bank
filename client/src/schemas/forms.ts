@@ -20,7 +20,7 @@ export const signUpFormSchema = z
     }),
     name: z
       .string()
-      .min(8, {
+      .min(6, {
         message: "O nome deve ter no mínimo 6 caracteres",
       })
       .max(255, {
