@@ -59,7 +59,9 @@ func BroadcastToken(id interbank.BankId) {
 		"to": id,
 		"ts": time.Now(),
 	})
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: constants.MaxTimeToRequestToken,
+	}
 	for _, bank := range storage.Ring.List() {
 		req, _ := http.NewRequest("PUT", "http://"+bank.Addr+"/interbank/token", bytes.NewBuffer(body))
 		req.Header.Set("Content-Type", "application/json")
@@ -72,7 +74,6 @@ func BroadcastToken(id interbank.BankId) {
 			slog.Error("Erro ao enviar token para banco", "bank", bank.Id, "status", res.StatusCode)
 			continue
 		}
-		slog.Info("Token enviado para banco", "bank", bank.Id)
 	}
 }
 
